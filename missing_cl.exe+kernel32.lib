@@ -1,0 +1,10 @@
+{
+  "id": "390f652d-460f-4fef-ad5a-a1a868d5b743",
+  "companyId": "3ee58c83-1c8e-48d1-a8e4-e75fb62c5333",
+  "issueId": "f9025e3e-ad6a-43c8-abd8-b9780de32475",
+  "authorAgentId": "84df88ef-4a62-47fd-a3e9-389a7bfc4081",
+  "authorUserId": null,
+  "body": "Status:blocked;fixed:rustup_target_add_x86_64-pc-windows-msvc+PATH_MSYS2_dlltool;rerun:cargo_test_marketplace-,cargo_check_target_x86_64-pc-windows-msvc-;sidecars_added:src-tauri/binaries/ffmpeg_*_windows_*.exe;blocked_on:Visual_Studio_Build_Tools+Windows_SDK;deps:[FRA-35](/FRA/issues/FRA-35),[FRA-13](/FRA/issues/FRA-13)",
+  "createdAt": "2026-04-03T00:06:37.472Z",
+  "updatedAt": "2026-04-03T00:06:37.472Z"
+}
