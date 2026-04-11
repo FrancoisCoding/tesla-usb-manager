@@ -7,6 +7,13 @@ import Lighthouse from "./screens/Lighthouse";
 export type Screen = "dashboard" | "marketplace" | "lighthouse";
 
 // SVG icon helpers
+function IconUSB() {
+  return (
+    <svg viewBox="0 0 16 16" fill="currentColor" className="sidebar-brand-usb-icon">
+      <path fillRule="evenodd" d="M6 0h4v4h2v8H4V4h2V0zM5.5 5.5h2v4h-2V5.5zm3 0h2v4h-2V5.5z"/>
+    </svg>
+  );
+}
 function IconHome() {
   return <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 7h2v8h4v-4h2v4h4V7h2L8 1z"/></svg>;
 }
@@ -18,6 +25,7 @@ function AppSidebar({ screen, onNavigate }: { screen: Screen; onNavigate: (s: Sc
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
+        <IconUSB />
         <div className="sidebar-brand-name">Tesla USB Manager</div>
       </div>
       <nav className="sidebar-nav">

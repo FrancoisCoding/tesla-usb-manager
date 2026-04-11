@@ -54,6 +54,9 @@ body {
 .sidebar-brand {
   padding: 1.1rem 1rem 1rem;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .sidebar-brand-name {
@@ -72,16 +75,11 @@ body {
   letter-spacing: 0.08em;
 }
 
-.sidebar-brand-icon {
-  width: 28px;
-  height: 28px;
-  background: var(--accent);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  margin-bottom: 0.4rem;
+.sidebar-brand-usb-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
 .sidebar-nav {
