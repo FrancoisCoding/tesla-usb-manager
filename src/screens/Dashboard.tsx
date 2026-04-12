@@ -122,18 +122,6 @@ export default function Dashboard({ onNavigate }: Props) {
             Recommended: <strong style={{ color: "var(--text)" }}>{selected.recommendedFilesystem}</strong> ({totalGb} GB)
           </div>
         )}
-        <div className="flex gap-1">
-          <button className="btn btn-primary btn-sm" style={{ marginLeft: "auto" }} disabled={!selected || applying} onClick={() => setShowModal(true)}>
-            Format &amp; Configure
-          </button>
-        </div>
-      </div>
-
-      <div className="card" style={{ marginBottom: "1rem" }}>
-        <div style={{ fontWeight: 700, fontSize: "0.9rem", marginBottom: "0.5rem" }}>Apply &amp; Eject</div>
-        <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "0.75rem" }}>
-          Write the Tesla folder structure to your USB drive, then safely eject it.
-        </div>
         {applyMsg && (
           <div style={{ marginBottom: "0.5rem", fontSize: "0.75rem", color: applyMsg.startsWith("Error") ? "var(--accent)" : "var(--green)" }}>
             {applyMsg}
@@ -141,12 +129,14 @@ export default function Dashboard({ onNavigate }: Props) {
         )}
         {ejected && <div style={{ marginBottom: "0.5rem", fontSize: "0.75rem", color: "var(--green)" }}>Drive ejected — safe to remove.</div>}
         <div className="flex gap-1">
-          <button className="btn btn-primary btn-sm" disabled={!selected || applying} onClick={handleApplyLayout}>
-            {applying ? "Applying..." : "Apply to Drive"}
+          <button className="btn btn-primary btn-sm" style={{ marginLeft: "auto" }} disabled={!selected || applying} onClick={() => setShowModal(true)}>
+            {applying ? "Applying..." : "Format, Configure &amp; Apply"}
           </button>
-          <button className="btn btn-ghost btn-sm" disabled={!selected} onClick={() => setEjected(true)}>
-            Eject and Go
-          </button>
+          {applyMsg && !applyMsg.startsWith("Error") && (
+            <button className="btn btn-ghost btn-sm" disabled={!selected} onClick={() => setEjected(true)}>
+              Eject and Go
+            </button>
+          )}
         </div>
       </div>
 
@@ -159,7 +149,7 @@ export default function Dashboard({ onNavigate }: Props) {
         <div style={{ fontSize: "1.1rem", opacity: 0.4, flexShrink: 0 }}>→</div>
       </button>
 
-      {showModal && <SafetyModal onClose={() => setShowModal(false)} onConfirm={handleApplyLayout} />}
+      {showModal && <SafetyModal onClose={() => setShowModal(false)} onConfirm={handleApplyLayout} drive={selected} />}
     </div>
   );
 }

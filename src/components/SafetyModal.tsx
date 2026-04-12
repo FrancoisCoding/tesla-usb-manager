@@ -1,16 +1,26 @@
+interface DriveInfo {
+  displayName: string;
+  mountPath: string;
+  totalBytes: number | null;
+}
+
 interface Props {
   onClose: () => void;
   onConfirm?: () => void;
+  drive?: DriveInfo | null;
 }
 
-export default function SafetyModal({ onClose, onConfirm }: Props) {
+export default function SafetyModal({ onClose, onConfirm, drive }: Props) {
+  const sizeGb = drive?.totalBytes != null ? Math.round(drive.totalBytes / 1024 / 1024 / 1024) : null;
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         
         <div className="modal-title">Safety Confirmation<br />Required</div>
         <div className="modal-desc">
-          You are about to initiate a drive format on <strong>Tesla USB Manager</strong>.<br />
+          You are about to format{" "}
+          <strong>{drive ? drive.displayName + "(" + drive.mountPath + ")" : "the selected drive"}</strong>
+          {sizeGb != null ? " - " + sizeGb + " GB" : ""}.<br />
           This action is irreversible.
         </div>
         <div className="modal-warning">
@@ -25,12 +35,12 @@ export default function SafetyModal({ onClose, onConfirm }: Props) {
         </div>
         <div className="modal-actions">
           <button className="btn btn-primary" onClick={() => { onConfirm?.(); onClose(); }}>
-            Confirm Format
+            Confirm &amp; Apply
           </button>
           <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
         </div>
         <div className="modal-footer">
-          <span>128GB STORAGE</span>
+          <span>{sizeGb != null ? sizeGb + "GB STORAGE" : "128GB STORAGE"}</span>
           <span>V1.0 ACTIVE</span>
         </div>
       </div>
