@@ -17,11 +17,13 @@ function IconUSB() {
 function IconHome() {
   return <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 7h2v8h4v-4h2v4h4V7h2L8 1z"/></svg>;
 }
+function IconLightShow(){
+  return <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.5 3.5L13 5.5l-2.5 2.5.6 3.5L8 9.8l-3.1 1.7.6-3.5L3 5.5l3.5-.5L8 1z"/></svg>;
+}
 function IconMarket() {
   return <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2h14v2H1V2zm0 3h14v9H1V5zm2 2v5h10V7H3zm2 1h6v1H5V8zm0 2h4v1H5v-1z"/></svg>;
 }
 function AppSidebar({ screen, onNavigate }: { screen: Screen; onNavigate: (s: Screen) => void }) {
-  const inMarketplace = screen === "marketplace" || screen === "lighthouse";
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -32,8 +34,11 @@ function AppSidebar({ screen, onNavigate }: { screen: Screen; onNavigate: (s: Sc
         <button className={`sidebar-item ${screen === "dashboard" ? "active" : ""}`} onClick={() => onNavigate("dashboard")}>
           <IconHome /> Dashboard
         </button>
-        <button className={`sidebar-item ${inMarketplace ? "active" : ""}`} onClick={() => onNavigate("marketplace")}>
+        <button className={`sidebar-item ${screen === "marketplace" ? "active" : ""}`} onClick={() => onNavigate("marketplace")}>
           <IconMarket /> Marketplace
+        </button>
+        <button className={`sidebar-item ${screen === "lighthouse" ? "active" : ""}`} onClick={()=>onNavigate("lighthouse")}>
+          <IconLightShow /> Light Shows
         </button>
       </nav>
     </aside>
