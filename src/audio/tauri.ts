@@ -21,6 +21,7 @@ export type MarketplaceCatalogEntry = {
   category: string;
   previewUrl: string;
   downloadUrl: string;
+  imageUrl?: string;
 };
 
 export type MarketplaceCatalogResult = {

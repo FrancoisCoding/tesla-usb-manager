@@ -151,8 +151,7 @@ export default function Marketplace() {
   }
 
   return (
-    <div>
-      <div className="content">
+    <div className="content">
         <div
           className="flex items-center gap-1"
           style={{ marginBottom: "1rem" }}
@@ -190,14 +189,6 @@ export default function Marketplace() {
               {tab}
             </button>
           ))}
-          <button
-            className="filter-tab"
-            style={{ marginLeft: "auto", opacity: 0.7 }}
-            onClick={() => loadCatalog(true)}
-            disabled={loading}
-          >
-            {loading ? "..." : "Refresh"}
-          </button>
         </div>
 
         {catalogErr && (
@@ -225,14 +216,22 @@ export default function Marketplace() {
                 return (
                   <div key={key} className="sound-card">
                     <div className="sound-art">
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z" />
-                      </svg>
+                      {sound.imageUrl ? (
+                        <img
+                          src={sound.imageUrl}
+                          alt={sound.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      ) : (
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z" />
+                        </svg>
+                      )}
                     </div>
                     <div className="sound-info">
                       <div className="sound-name">{sound.name}</div>
@@ -309,7 +308,6 @@ export default function Marketplace() {
             )}
           </>
         )}
-      </div>
       <div className="card" style={{ marginTop: "1rem" }}>
         <div
           style={{

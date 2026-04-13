@@ -16,6 +16,8 @@ pub struct MarketplaceEntry {
     pub category: String,
     pub preview_url: String,
     pub download_url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -260,14 +262,19 @@ pub(crate) fn parse_catalog_entries(html: &str) -> Vec<MarketplaceEntry> {
                 Some(value) => value,
                 None => continue,
             };
-            let preview_raw = match card
-                .select(&preview_selector)
-                .next()
-                .and_then(|node| node.value().attr("data-audio"))
-            {
+            let preview_node = match card.select(&preview_selector).next() {
+                Some(node) => node,
+                None => continue,
+            };
+            let preview_raw = match preview_node.value().attr("data-audio") {
                 Some(value) => value,
                 None => continue,
             };
+            let image_url = preview_node
+                .value()
+                .attr("src")
+                .and_then(|src| resolve_marketplace_url(src).ok())
+                .map(|url| url.to_string());
 
             let download_url = match resolve_marketplace_url(download_raw) {
                 Ok(url) => url.to_string(),
@@ -283,6 +290,7 @@ pub(crate) fn parse_catalog_entries(html: &str) -> Vec<MarketplaceEntry> {
                 category: category.clone(),
                 preview_url,
                 download_url,
+                image_url,
             });
         }
     }
