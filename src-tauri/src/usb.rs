@@ -3,8 +3,10 @@ use std::{
     collections::hash_map::DefaultHasher,
     fs,
     hash::{Hash, Hasher},
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
+#[cfg(not(target_os = "windows"))]
+use std::path::Path;
 
 const FAT32_LIMIT_BYTES: u64 = 32 * 1024 * 1024 * 1024;
 const DEFAULT_VOLUME_LABEL: &str = "TESLAUSB";
@@ -197,6 +199,7 @@ fn detect_windows_mounts() -> Vec<PathBuf> {
         .collect()
 }
 
+#[cfg(not(target_os = "windows"))]
 fn detect_unix_mounts(base: &Path) -> Vec<PathBuf> {
     match fs::read_dir(base) {
         Ok(entries) => entries

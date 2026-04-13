@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import type { Screen } from "../App";
 import { fetchLightShows, downloadInstallLightShow, youtubeThumbnail, youtubeVideoId } from "../lightshow/teslalightshare";
 import type { LightShowEntry, FetchLightShowsRequest } from "../lightshow/teslalightshare";
 import { installLightShow } from "../lightshow/tauri";
-
-interface Props { onNavigate: (s: Screen) => void }
 
 const CATS = [
   { label: "All", value: "all" },
@@ -21,7 +18,7 @@ const SORTS = [
   { label: "Top Voted", type: "votes", order: "desc" },
 ];
 
-export default function Lighthouse({ onNavigate }: Props) {
+export default function Lighthouse() {
   const [entries, setEntries] = useState([] as LightShowEntry[]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null as string | null);

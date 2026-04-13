@@ -53,8 +53,8 @@ function App() {
       <AppSidebar screen={screen} onNavigate={setScreen} />
       <div className="main-area">
         {screen === "dashboard" && <Dashboard onNavigate={setScreen} />}
-        {screen === "marketplace" && <Marketplace onNavigate={setScreen} />}
-        {screen === "lighthouse" && <Lighthouse onNavigate={setScreen} />}
+        {screen === "marketplace" && <Marketplace />}
+        {screen === "lighthouse" && <Lighthouse />}
       </div>
     </div>
   );

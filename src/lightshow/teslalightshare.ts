@@ -40,21 +40,21 @@ export type DownloadInstallLightShowResult = {
   bytes: number;
 };
 
-export function fetchLightShows(request) {
+export function fetchLightShows(request: FetchLightShowsRequest): Promise<FetchLightShowsResponse> {
   return invoke("fetch_lightshows", { request });
 }
 
-export function downloadInstallLightShow(request) {
+export function downloadInstallLightShow(request: DownloadInstallLightShowRequest): Promise<DownloadInstallLightShowResult> {
   return invoke("download_install_lightshow", { request });
 }
 
-export function youtubeVideoId(embedUrl) {
+export function youtubeVideoId(embedUrl: string): string {
   const idx = embedUrl.indexOf("/embed/");
   if (idx < 0) return String();
   return embedUrl.slice(idx + 7).split("?")[0].split("#")[0];
 }
 
-export function youtubeThumbnail(videoId) {
+export function youtubeThumbnail(videoId: string): string {
   if (!videoId) return String();
   return "https://img.youtube.com/vi/" + videoId + "/mqdefault.jpg";
 }
