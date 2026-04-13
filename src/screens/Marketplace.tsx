@@ -9,6 +9,23 @@ import type { MarketplaceCatalogEntry } from "../audio/tauri";
 import type { AudioTarget } from "../audio/pipeline";
 import { buildInstallDestination } from "../audio/pipeline";
 
+function SoundArt({ url, name }: { url?: string; name: string }) {
+  const [err, setErr] = useState(false);
+  return (
+    <div className="sound-art">
+      {url && !err ? (
+        <img src={url} alt={name}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          onError={() => setErr(true)} />
+      ) : (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z" />
+        </svg>
+      )}
+    </div>
+  );
+}
+
 const ALL_CAT = "All";
 
 export default function Marketplace() {
@@ -215,24 +232,7 @@ export default function Marketplace() {
                 const isPlaying = playingUrl === sound.previewUrl;
                 return (
                   <div key={key} className="sound-card">
-                    <div className="sound-art">
-                      {sound.imageUrl ? (
-                        <img
-                          src={sound.imageUrl}
-                          alt={sound.name}
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
-                      ) : (
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z" />
-                        </svg>
-                      )}
-                    </div>
+                    <SoundArt url={sound.imageUrl} name={sound.name} />
                     <div className="sound-info">
                       <div className="sound-name">{sound.name}</div>
                       {sound.category && (
