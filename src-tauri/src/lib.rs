@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     fs,
     fs::File,
+    io::{Read, Seek},
     path::{Path, PathBuf},
     process::Command,
     time::{SystemTime, UNIX_EPOCH},
@@ -37,7 +38,7 @@ impl AudioTarget {
 
     fn install_relative_path(&self) -> PathBuf {
         match self {
-            Self::LockChime => PathBuf::from("LockChime").join("LockChime.wav"),
+            Self::LockChime => PathBuf::from("LockChime.wav"),
             Self::Horn => PathBuf::from("Boombox").join("Horn.wav"),
         }
     }
@@ -85,6 +86,7 @@ struct TasInspectionResult {
     total_uncompressed_bytes: u64,
     has_sequence_file: bool,
     has_audio_file: bool,
+    has_matching_show_pair: bool,
     has_preview_video: bool,
     warnings: Vec<String>,
 }
@@ -215,13 +217,15 @@ fn validate_source_audio(path: &Path) -> Result<(), String> {
 
     let supported = ["mp3", "wav", "ogg", "flac"];
     if !supported.contains(&extension.as_str()) {
-        return Err("Unsupported source format. Supported formats: MP3, WAV, OGG, FLAC.".to_string());
+        return Err(
+            "Unsupported source format. Supported formats: MP3, WAV, OGG, FLAC.".to_string(),
+        );
     }
 
     Ok(())
 }
 
-fn validate_source_tas(path: &Path) -> Result<(), String> {
+fn validate_source_lightshow_package(path: &Path) -> Result<(), String> {
     if !path.exists() {
         return Err(format!(
             "Source light show file was not found: {}",
@@ -242,8 +246,10 @@ fn validate_source_tas(path: &Path) -> Result<(), String> {
         .map(|value| value.to_ascii_lowercase())
         .ok_or_else(|| "Source file must include an extension.".to_string())?;
 
-    if extension != "tas" {
-        return Err("Unsupported source format. Only .tas files are supported.".to_string());
+    if extension != "tas" && extension != "zip" {
+        return Err(
+            "Unsupported source format. Only .tas and .zip files are supported.".to_string(),
+        );
     }
 
     Ok(())
@@ -283,14 +289,75 @@ fn derive_show_name_from_path(path: &Path) -> String {
     sanitize_show_name(stem)
 }
 
+fn is_lightshow_audio_extension(extension: &str) -> bool {
+    extension == "mp3" || extension == "wav"
+}
+
+fn entry_file_stem(name: &str) -> Option<String> {
+    Path::new(name)
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .map(|value| value.to_string())
+}
+
+fn entry_file_extension(name: &str) -> Option<String> {
+    Path::new(name)
+        .extension()
+        .and_then(|value| value.to_str())
+        .map(|value| value.to_ascii_lowercase())
+}
+
+fn find_lightshow_pair<R: Read + Seek>(
+    archive: &mut ZipArchive<R>,
+) -> Result<(String, String, String), String> {
+    let mut sequences = Vec::new();
+    let mut audio_files = Vec::new();
+
+    for index in 0..archive.len() {
+        let entry = archive
+            .by_index(index)
+            .map_err(|error| format!("Failed to inspect light show package entry: {error}"))?;
+        if entry.is_dir() {
+            continue;
+        }
+
+        let name = entry.name().to_string();
+        let stem = match entry_file_stem(&name) {
+            Some(value) if !value.is_empty() => value,
+            _ => continue,
+        };
+        let extension = match entry_file_extension(&name) {
+            Some(value) => value,
+            None => continue,
+        };
+
+        if extension == "fseq" {
+            sequences.push((stem, name));
+        } else if is_lightshow_audio_extension(&extension) {
+            audio_files.push((stem, name, extension));
+        }
+    }
+
+    for (sequence_stem, sequence_name) in sequences {
+        if let Some((_, audio_name, audio_extension)) = audio_files
+            .iter()
+            .find(|(audio_stem, _, _)| audio_stem == &sequence_stem)
+        {
+            return Ok((sequence_name, audio_name.clone(), audio_extension.clone()));
+        }
+    }
+
+    Err("Light show package must contain matching .fseq and .mp3/.wav files.".to_string())
+}
+
 fn read_tas_inspection(source_path: &Path) -> Result<TasInspectionResult, String> {
-    let file =
-        File::open(source_path).map_err(|error| format!("Failed to open .tas file: {error}"))?;
+    let file = File::open(source_path)
+        .map_err(|error| format!("Failed to open light show package: {error}"))?;
     let mut archive = ZipArchive::new(file)
-        .map_err(|error| format!("The .tas file is invalid or corrupted: {error}"))?;
+        .map_err(|error| format!("The light show package is invalid or corrupted: {error}"))?;
 
     if archive.len() == 0 {
-        return Err("The .tas file is empty and cannot be installed.".to_string());
+        return Err("The light show package is empty and cannot be installed.".to_string());
     }
 
     let mut has_sequence_file = false;
@@ -310,10 +377,7 @@ fn read_tas_inspection(source_path: &Path) -> Result<TasInspectionResult, String
         if lower_name.ends_with(".fseq") {
             has_sequence_file = true;
         }
-        if lower_name.ends_with(".mp3")
-            || lower_name.ends_with(".wav")
-            || lower_name.ends_with(".flac")
-        {
+        if lower_name.ends_with(".mp3") || lower_name.ends_with(".wav") {
             has_audio_file = true;
         }
         if lower_name.ends_with(".mp4") || lower_name.ends_with(".webm") {
@@ -323,14 +387,18 @@ fn read_tas_inspection(source_path: &Path) -> Result<TasInspectionResult, String
         entries.push(name);
     }
 
+    let has_matching_show_pair = find_lightshow_pair(&mut archive).is_ok();
     let mut warnings = Vec::new();
     if !has_sequence_file {
-        warnings.push("No .fseq sequence file was found in the .tas archive.".to_string());
+        warnings.push("No .fseq sequence file was found in the light show package.".to_string());
     }
     if !has_audio_file {
         warnings.push(
-            "No companion audio file (.mp3/.wav/.flac) was found in the .tas archive.".to_string(),
+            "No companion audio file (.mp3/.wav) was found in the light show package.".to_string(),
         );
+    }
+    if !has_matching_show_pair {
+        warnings.push("The .fseq file name must match a .mp3 or .wav file name.".to_string());
     }
 
     Ok(TasInspectionResult {
@@ -341,19 +409,67 @@ fn read_tas_inspection(source_path: &Path) -> Result<TasInspectionResult, String
         total_uncompressed_bytes,
         has_sequence_file,
         has_audio_file,
+        has_matching_show_pair,
         has_preview_video,
         warnings,
     })
 }
 
-fn build_lightshow_install_path(usb_mount_path: &Path, show_name: &str) -> PathBuf {
-    usb_mount_path
-        .join("LIGHTSHOW")
-        .join(format!("{show_name}.tas"))
+fn lightshow_folder_path(usb_mount_path: &Path) -> PathBuf {
+    usb_mount_path.join("LightShow")
 }
 
-fn build_ffmpeg_args(input: &Path, output: &Path, normalize: bool) -> Vec<String> {
+fn validate_lightshow_usb_root(usb_mount_path: &Path) -> Result<(), String> {
+    if usb_mount_path.join("TeslaCam").exists() {
+        return Err(
+            "Tesla Light Show USB drives must not contain a base-level TeslaCam folder."
+                .to_string(),
+        );
+    }
+
+    for entry in fs::read_dir(usb_mount_path)
+        .map_err(|error| format!("Failed to inspect USB root: {error}"))?
+    {
+        let entry = entry.map_err(|error| format!("Failed to inspect USB root entry: {error}"))?;
+        let file_name = entry.file_name().to_string_lossy().to_ascii_lowercase();
+        let suspicious_update_file = file_name.contains("firmware")
+            || file_name.contains("map")
+            || file_name.contains("update");
+        if entry.path().is_file() && suspicious_update_file {
+            return Err(
+                "Tesla Light Show USB drives must not contain map or firmware update files."
+                    .to_string(),
+            );
+        }
+    }
+
+    Ok(())
+}
+
+fn build_lightshow_install_paths(
+    usb_mount_path: &Path,
+    show_name: &str,
+    audio_extension: &str,
+) -> (PathBuf, PathBuf) {
+    let lightshow_dir = lightshow_folder_path(usb_mount_path);
+    (
+        lightshow_dir.join(format!("{show_name}.fseq")),
+        lightshow_dir.join(format!("{show_name}.{audio_extension}")),
+    )
+}
+
+fn build_ffmpeg_args(
+    input: &Path,
+    output: &Path,
+    normalize: bool,
+    target: &AudioTarget,
+) -> Vec<String> {
     let mut args = vec!["-y".to_string(), "-i".to_string(), path_to_string(input)];
+
+    if matches!(target, AudioTarget::LockChime) {
+        args.push("-t".to_string());
+        args.push("5".to_string());
+    }
 
     if normalize {
         args.push("-af".to_string());
@@ -361,7 +477,14 @@ fn build_ffmpeg_args(input: &Path, output: &Path, normalize: bool) -> Vec<String
     }
 
     args.push("-ac".to_string());
-    args.push("2".to_string());
+    args.push(
+        if matches!(target, AudioTarget::LockChime) {
+            "1"
+        } else {
+            "2"
+        }
+        .to_string(),
+    );
     args.push("-ar".to_string());
     args.push("44100".to_string());
     args.push("-c:a".to_string());
@@ -493,7 +616,12 @@ fn process_audio_pipeline(request: AudioPipelineRequest) -> Result<AudioPipeline
     }
 
     let ffmpeg_binary = request.ffmpeg_path.as_deref().unwrap_or("ffmpeg");
-    let ffmpeg_args = build_ffmpeg_args(&source_path, &converted_path, request.normalize);
+    let ffmpeg_args = build_ffmpeg_args(
+        &source_path,
+        &converted_path,
+        request.normalize,
+        &request.target,
+    );
     run_ffmpeg(ffmpeg_binary, &ffmpeg_args)?;
 
     let install_path = usb_mount_path.join(request.target.install_relative_path());
@@ -516,14 +644,14 @@ fn process_audio_pipeline(request: AudioPipelineRequest) -> Result<AudioPipeline
 #[tauri::command]
 fn inspect_tas_file(request: TasInspectionRequest) -> Result<TasInspectionResult, String> {
     let source_path = PathBuf::from(&request.source_path);
-    validate_source_tas(&source_path)?;
+    validate_source_lightshow_package(&source_path)?;
     read_tas_inspection(&source_path)
 }
 
 #[tauri::command]
 fn install_lightshow(request: LightShowInstallRequest) -> Result<LightShowInstallResult, String> {
     let source_path = PathBuf::from(&request.source_path);
-    validate_source_tas(&source_path)?;
+    validate_source_lightshow_package(&source_path)?;
 
     let usb_mount_path = PathBuf::from(&request.usb_mount_path);
     if !usb_mount_path.exists() {
@@ -538,11 +666,12 @@ fn install_lightshow(request: LightShowInstallRequest) -> Result<LightShowInstal
             request.usb_mount_path
         ));
     }
+    validate_lightshow_usb_root(&usb_mount_path)?;
 
     let inspection = read_tas_inspection(&source_path)?;
-    if !inspection.has_sequence_file || !inspection.has_audio_file {
+    if !inspection.has_matching_show_pair {
         return Err(
-            "Light show archive is missing required .fseq and/or audio assets.".to_string(),
+            "Light show package is missing matching .fseq and .mp3/.wav files.".to_string(),
         );
     }
 
@@ -553,26 +682,54 @@ fn install_lightshow(request: LightShowInstallRequest) -> Result<LightShowInstal
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| inspection.show_name.clone());
 
-    let install_path = build_lightshow_install_path(&usb_mount_path, &show_name);
-    if let Some(parent) = install_path.parent() {
-        fs::create_dir_all(parent)
-            .map_err(|error| format!("Failed to prepare LIGHTSHOW destination: {error}"))?;
-    }
+    let file = File::open(&source_path)
+        .map_err(|error| format!("Failed to open light show package: {error}"))?;
+    let mut archive = ZipArchive::new(file)
+        .map_err(|error| format!("The light show package is invalid or corrupted: {error}"))?;
+    let (sequence_entry, audio_entry, audio_extension) = find_lightshow_pair(&mut archive)?;
+    let (sequence_path, audio_path) =
+        build_lightshow_install_paths(&usb_mount_path, &show_name, &audio_extension);
+    let lightshow_dir = lightshow_folder_path(&usb_mount_path);
+    fs::create_dir_all(&lightshow_dir)
+        .map_err(|error| format!("Failed to prepare LightShow destination: {error}"))?;
 
-    let already_exists = install_path.exists();
+    let already_exists = sequence_path.exists() || audio_path.exists();
     if already_exists && !request.overwrite_existing {
         return Err(format!(
             "Destination already exists and overwrite is disabled: {}",
-            path_to_string(&install_path)
+            path_to_string(&lightshow_dir)
         ));
     }
 
-    fs::copy(&source_path, &install_path)
-        .map_err(|error| format!("Failed to install .tas file to USB: {error}"))?;
+    let mut sequence_file = archive
+        .by_name(&sequence_entry)
+        .map_err(|error| format!("Failed to read .fseq from light show package: {error}"))?;
+    let mut sequence_bytes = Vec::new();
+    sequence_file
+        .read_to_end(&mut sequence_bytes)
+        .map_err(|error| format!("Failed to read .fseq content: {error}"))?;
+    drop(sequence_file);
+
+    let mut audio_file = archive
+        .by_name(&audio_entry)
+        .map_err(|error| format!("Failed to read audio from light show package: {error}"))?;
+    let mut audio_bytes = Vec::new();
+    audio_file
+        .read_to_end(&mut audio_bytes)
+        .map_err(|error| format!("Failed to read audio content: {error}"))?;
+
+    fs::write(&sequence_path, sequence_bytes)
+        .map_err(|error| format!("Failed to install .fseq file to USB: {error}"))?;
+    fs::write(&audio_path, audio_bytes)
+        .map_err(|error| format!("Failed to install light show audio to USB: {error}"))?;
 
     Ok(LightShowInstallResult {
         source_path: path_to_string(&source_path),
-        installed_path: path_to_string(&install_path),
+        installed_path: format!(
+            "{} + {}",
+            path_to_string(&sequence_path),
+            path_to_string(&audio_path)
+        ),
         show_name,
         overwritten: already_exists,
         inspection,
@@ -601,4 +758,72 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{Cursor, Write};
+    use zip::write::SimpleFileOptions;
+
+    fn build_zip(entries: &[(&str, &[u8])]) -> Vec<u8> {
+        let cursor = Cursor::new(Vec::new());
+        let mut writer = zip::ZipWriter::new(cursor);
+        let options = SimpleFileOptions::default();
+
+        for (name, bytes) in entries {
+            writer.start_file(name, options).unwrap();
+            writer.write_all(bytes).unwrap();
+        }
+
+        writer.finish().unwrap().into_inner()
+    }
+
+    #[test]
+    fn finds_matching_lightshow_sequence_and_audio_pair() {
+        let zip_bytes = build_zip(&[
+            ("nested/show1.fseq", b"sequence"),
+            ("nested/show1.wav", b"audio"),
+            ("preview.mp4", b"preview"),
+        ]);
+        let cursor = Cursor::new(zip_bytes);
+        let mut archive = ZipArchive::new(cursor).unwrap();
+
+        let pair = find_lightshow_pair(&mut archive).unwrap();
+
+        assert_eq!(
+            pair,
+            (
+                "nested/show1.fseq".to_string(),
+                "nested/show1.wav".to_string(),
+                "wav".to_string(),
+            )
+        );
+    }
+
+    #[test]
+    fn rejects_lightshow_package_without_matching_audio_stem() {
+        let zip_bytes = build_zip(&[("show1.fseq", b"sequence"), ("show2.wav", b"audio")]);
+        let cursor = Cursor::new(zip_bytes);
+        let mut archive = ZipArchive::new(cursor).unwrap();
+
+        let result = find_lightshow_pair(&mut archive);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn rejects_lightshow_usb_root_with_teslacam_folder() {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let base = std::env::temp_dir().join(format!("tesla_lightshow_root_{suffix}"));
+        fs::create_dir_all(base.join("TeslaCam")).unwrap();
+
+        let result = validate_lightshow_usb_root(&base);
+
+        assert!(result.is_err());
+        fs::remove_dir_all(base).unwrap();
+    }
 }

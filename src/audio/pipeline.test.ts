@@ -40,7 +40,7 @@ describe("buildFfmpegArgs", () => {
 describe("buildInstallDestination", () => {
   test("maps targets to Tesla USB destinations", () => {
     expect(buildInstallDestination("/usb", "lock_chime")).toBe(
-      "/usb/LockChime/LockChime.wav",
+      "/usb/LockChime.wav",
     );
     expect(buildInstallDestination("/usb", "horn")).toBe(
       "/usb/Boombox/Horn.wav",

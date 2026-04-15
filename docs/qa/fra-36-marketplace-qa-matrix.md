@@ -53,7 +53,7 @@ Parent: [FRA-13](/FRA/issues/FRA-13)
 ## Regression Notes
 
 - Destination mapping currently resolves to:
-  - Lock chime: `LockChime/LockChime.wav`
+  - Lock chime: `LockChime.wav`
   - Horn: `Boombox/Horn.wav`
 - This is consistent across frontend and backend pipeline logic, with passing tests.
 - Parent issue notes mention `Music/` for horn in older text; current implementation is aligned to boombox path usage.

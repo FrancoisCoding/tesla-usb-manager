@@ -18,18 +18,17 @@ export default function SafetyModal({ onClose, onConfirm, drive }: Props) {
         
         <div className="modal-title">Safety Confirmation<br />Required</div>
         <div className="modal-desc">
-          You are about to format{" "}
+          You are about to configure{" "}
           <strong>{drive ? drive.displayName + "(" + drive.mountPath + ")" : "the selected drive"}</strong>
           {sizeGb != null ? " - " + sizeGb + " GB" : ""}.<br />
-          This action is irreversible.
+          Confirm the drive path before writing Tesla media folders.
         </div>
         <div className="modal-warning">
           <div className="modal-warning-icon">●</div>
           <div>
-            <div className="modal-warning-label">Destructive Action</div>
+            <div className="modal-warning-label">Drive Write</div>
             <div className="modal-warning-text">
-              All Dashcam footage, Sentry Mode clips, and custom music libraries will be{" "}
-              <span className="text-accent text-strike">permanently erased</span>. Data recovery is not possible after this operation.
+              Tesla USB Manager will create missing media folders on the selected drive. It will not remove existing files during this step.
             </div>
           </div>
         </div>

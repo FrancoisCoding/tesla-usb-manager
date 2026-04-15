@@ -1,16 +1,16 @@
 use serde::{Deserialize, Serialize};
+#[cfg(not(target_os = "windows"))]
+use std::path::Path;
 use std::{
     collections::hash_map::DefaultHasher,
     fs,
     hash::{Hash, Hasher},
     path::PathBuf,
 };
-#[cfg(not(target_os = "windows"))]
-use std::path::Path;
 
 const FAT32_LIMIT_BYTES: u64 = 32 * 1024 * 1024 * 1024;
 const DEFAULT_VOLUME_LABEL: &str = "TESLAUSB";
-const TESLA_FOLDERS: [&str; 4] = ["TeslaCam", "Sentry", "Music", "LIGHTSHOW"];
+const TESLA_FOLDERS: [&str; 1] = ["Boombox"];
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -349,15 +349,7 @@ mod tests {
 
     #[test]
     fn folder_layout_matches_tesla_requirements() {
-        assert_eq!(
-            folder_layout(),
-            vec![
-                "TeslaCam".to_string(),
-                "Sentry".to_string(),
-                "Music".to_string(),
-                "LIGHTSHOW".to_string()
-            ]
-        );
+        assert_eq!(folder_layout(), vec!["Boombox".to_string()]);
     }
 
     #[test]
@@ -377,8 +369,7 @@ mod tests {
             .as_nanos();
         let base = std::env::temp_dir().join(format!("tesla_usb_plan_{suffix}"));
 
-        fs::create_dir_all(base.join("Music")).unwrap();
-        fs::create_dir_all(base.join("Sentry")).unwrap();
+        fs::create_dir_all(base.join("Boombox")).unwrap();
 
         let request = TeslaFormatPlanRequest {
             mount_path: base.to_string_lossy().to_string(),
@@ -387,10 +378,7 @@ mod tests {
         };
 
         let plan = build_tesla_format_plan(request).unwrap();
-        assert_eq!(
-            plan.folders_to_create,
-            vec!["TeslaCam".to_string(), "LIGHTSHOW".to_string()]
-        );
+        assert!(plan.folders_to_create.is_empty());
 
         fs::remove_dir_all(base).unwrap();
     }

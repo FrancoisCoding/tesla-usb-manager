@@ -12,12 +12,16 @@ describe("validateTasFilePath", () => {
     expect(validateTasFilePath("C:\\Shows\\Cyber Groove.tas").ok).toBe(true);
   });
 
-  test("rejects non-.tas files", () => {
-    const result = validateTasFilePath("C:\\Shows\\Cyber Groove.zip");
+  test("accepts .zip light show packages", () => {
+    expect(validateTasFilePath("C:\\Shows\\Cyber Groove.zip").ok).toBe(true);
+  });
+
+  test("rejects unsupported light show packages", () => {
+    const result = validateTasFilePath("C:\\Shows\\Cyber Groove.mp4");
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toContain(".tas");
+      expect(result.error).toContain(".tas or .zip");
     }
   });
 });
@@ -35,9 +39,9 @@ describe("deriveShowNameFromPath", () => {
 });
 
 describe("buildLightShowInstallDestination", () => {
-  test("targets Tesla LIGHTSHOW folder", () => {
+  test("targets Tesla LightShow folder with matching fseq and audio files", () => {
     expect(buildLightShowInstallDestination("E:\\", "Neon_Run_1")).toBe(
-      "E:/LIGHTSHOW/Neon_Run_1.tas",
+      "E:/LightShow/Neon_Run_1.fseq + E:/LightShow/Neon_Run_1.wav",
     );
   });
 });

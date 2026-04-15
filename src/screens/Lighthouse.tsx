@@ -177,8 +177,8 @@ export default function Lighthouse({ embedded = false }: LighthouseProps) {
           </>
         )}
         <div style={{ marginBottom: "0.75rem" }}>
-          <div style={{ fontWeight: 600, fontSize: "0.82rem", marginBottom: "0.4rem" }}>Import Custom .tas</div>
-          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: "0.4rem" }}>Path to a local .tas file</div>
+          <div style={{ fontWeight: 600, fontSize: "0.82rem", marginBottom: "0.4rem" }}>Import Custom Light Show</div>
+          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: "0.4rem" }}>Path to a local .tas or .zip package</div>
           <input
             style={{ width: "100%", boxSizing: "border-box", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: "6px", padding: "0.4rem 0.5rem", fontSize: "0.75rem", marginBottom: "0.4rem" }}
             placeholder="C:/Users/.../show.tas"

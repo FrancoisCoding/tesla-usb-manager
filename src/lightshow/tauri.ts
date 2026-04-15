@@ -12,6 +12,7 @@ export type TasInspectionResult = {
   totalUncompressedBytes: number;
   hasSequenceFile: boolean;
   hasAudioFile: boolean;
+  hasMatchingShowPair: boolean;
   hasPreviewVideo: boolean;
   warnings: string[];
 };

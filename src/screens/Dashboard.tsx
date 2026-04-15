@@ -14,10 +14,7 @@ import {
 } from "./usbSetupStatus";
 
 const TESLA_FOLDERS = [
-  { key: "TeslaCam", desc: "Dashcam recording" },
-  { key: "Sentry", desc: "Sentry mode clips" },
-  { key: "Music", desc: "Audio files" },
-  { key: "LIGHTSHOW", desc: "Light show files" },
+  { key: "Boombox", desc: "Horn sounds" },
 ];
 
 interface Props {
@@ -162,7 +159,7 @@ export default function Dashboard({ onNavigate, onSetupReadyChange }: Props) {
           Prepare a Tesla-ready USB drive
         </div>
         <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
-          Select a drive, confirm Tesla folder compatibility, then continue to Marketplace once setup is complete.
+          Select a drive, confirm Tesla media folder compatibility, then continue to Marketplace once setup is complete.
         </div>
       </div>
       <div className="card" style={{ marginBottom: "1rem" }}>
@@ -284,7 +281,7 @@ export default function Dashboard({ onNavigate, onSetupReadyChange }: Props) {
             disabled={!selected || applying}
             onClick={() => setShowModal(true)}
           >
-            {applying ? "Configuring..." : "Format, Configure & Apply"}
+            {applying ? "Configuring..." : "Configure Drive"}
           </button>
           {setupReady && (
             <button

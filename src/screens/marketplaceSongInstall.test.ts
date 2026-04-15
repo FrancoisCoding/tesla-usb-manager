@@ -48,7 +48,7 @@ describe("confirmMarketplaceSongInstall", () => {
       entry: SAMPLE_ENTRY,
       usbPath: "D:/TeslaUSB/",
       target: "lock_chime",
-      destinationPath: "D:/TeslaUSB/LockChime/LockChime.wav",
+      destinationPath: "D:/TeslaUSB/LockChime.wav",
     });
   });
 });

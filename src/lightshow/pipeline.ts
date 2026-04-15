@@ -30,8 +30,8 @@ function fileExtension(pathValue: string): string | null {
 export function validateTasFilePath(pathValue: string): ValidationResult {
   const extension = fileExtension(pathValue);
 
-  if (extension !== "tas") {
-    return { ok: false, error: "Only .tas light show files are supported." };
+  if (extension !== "tas" && extension !== "zip") {
+    return { ok: false, error: "Only .tas or .zip light show packages are supported." };
   }
 
   return { ok: true };
@@ -54,7 +54,7 @@ export function buildLightShowInstallDestination(
   showName: string,
 ): string {
   const base = trimTrailingSeparators(usbRoot);
-  return `${base}/LIGHTSHOW/${showName}.tas`;
+  return `${base}/LightShow/${showName}.fseq + ${base}/LightShow/${showName}.wav`;
 }
 
 export function mergeImportedShows(

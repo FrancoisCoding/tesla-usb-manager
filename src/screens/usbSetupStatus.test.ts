@@ -7,7 +7,7 @@ describe("canSkipToMarketplace", () => {
   });
 
   test("requires configuration when folders are missing", () => {
-    expect(canSkipToMarketplace(["TeslaCam", "Music"])).toBe(false);
+    expect(canSkipToMarketplace(["Boombox"])).toBe(false);
   });
 });
 

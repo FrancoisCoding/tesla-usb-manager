@@ -7,6 +7,8 @@
 - Simplified Marketplace tabs so users view `Music` or `Light Shows`, never both.
 - Converted USB path controls in Step 2 into read-only displays sourced from Step 1.
 - Added mount-path badge styling for a cleaner, modern UI presentation.
+- Updated media destinations to align with Tesla requirements:
+  `LockChime.wav`, `Boombox/`, and `LightShow/`.
 
 ## Technical Notes
 

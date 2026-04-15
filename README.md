@@ -25,13 +25,14 @@ For the full download, verification, and publishing process, see
 ## What It Does
 
 - Detects removable USB drives and shows capacity, filesystem, and mount path.
-- Creates the expected Tesla media folders: `TeslaCam`, `Sentry`, `Music`, and
-  `LIGHTSHOW`.
+- Creates the Tesla `Boombox` folder used for custom horn sounds.
 - Keeps Marketplace disabled until Step 1 confirms the selected USB drive is
   ready.
 - Installs Marketplace audio as either a horn sound or a lock chime.
 - Imports custom audio files and converts them with FFmpeg for Tesla use.
-- Installs `.tas` light show packages into the Tesla `LIGHTSHOW` folder.
+- Creates `LightShow` during light-show install and extracts `.tas` or `.zip`
+  light show packages into Tesla's required
+  `LightShow` folder as matching `.fseq` plus `.mp3` or `.wav` files.
 
 ## User Workflow
 
@@ -51,6 +52,8 @@ destination paths, and troubleshooting steps.
 Tesla USB Manager writes folders and media files to the selected USB drive.
 Always confirm the mount path before applying setup or installing media. Custom
 horn sounds must comply with local traffic laws and should be used responsibly.
+Tesla light-show drives must not contain a root-level `TeslaCam` folder, map
+update files, or firmware update files.
 
 ## Open Source
 

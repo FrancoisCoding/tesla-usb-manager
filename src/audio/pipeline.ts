@@ -70,8 +70,7 @@ export function buildInstallDestination(
   target: AudioTarget,
 ): string {
   const base = trimTrailingSeparators(usbRoot);
-  const suffix =
-    target === "lock_chime" ? "LockChime/LockChime.wav" : "Boombox/Horn.wav";
+  const suffix = target === "lock_chime" ? "LockChime.wav" : "Boombox/Horn.wav";
 
   return `${base}/${suffix}`;
 }

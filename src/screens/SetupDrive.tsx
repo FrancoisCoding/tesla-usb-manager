@@ -89,7 +89,7 @@ export default function SetupDrive({ onNavigate }: Props) {
             {/* Perf tip */}
             <div className="perf-tip">
               <div className="perf-tip-label">❤ Performance Tip</div>
-              For consistent Sentry Mode recording and Dashcam reliability, we recommend using an SSD with at least 500MB/s write speeds. Tesla USB Manager will automatically format the drive to exFAT.
+              For reliable media installs, use a USB drive formatted as exFAT or FAT32. Tesla USB Manager creates the required media folders without removing existing files.
             </div>
           </div>
 

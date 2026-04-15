@@ -41,7 +41,7 @@ describe("prepareCustomInstallConfirmation", () => {
         dropFile: { name: "beep.mp3", bytes: [1, 2, 3] },
         usbPath: "D:/TeslaUSB/",
         target: "lock_chime",
-        destinationPath: "D:/TeslaUSB/LockChime/LockChime.wav",
+        destinationPath: "D:/TeslaUSB/LockChime.wav",
       },
     });
   });

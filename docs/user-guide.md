@@ -9,7 +9,7 @@ You need:
 
 - A Windows PC with Tesla USB Manager installed from GitHub Releases.
 - A USB drive that you intend to use with your Tesla.
-- Enough free space for dashcam, Sentry Mode, music, and light show files.
+- Enough free space for Boombox audio and light show files.
 - Network access when loading Marketplace content.
 
 Back up important files before preparing a drive. The app focuses on Tesla
@@ -27,15 +27,12 @@ Step 1 detects removable USB drives and shows key information:
 - Tesla folder setup status.
 
 Select the drive you want to use. If the app reports that required Tesla
-folders are missing, choose **Format, Configure & Apply** and confirm the safety
-prompt. The app creates the standard folders used by Tesla media features:
+folders are missing, choose **Configure Drive** and confirm the safety
+prompt. The app creates the Boombox folder used for custom horn sounds:
 
 | Folder | Purpose |
 | --- | --- |
-| `TeslaCam/` | Dashcam recording storage. |
-| `Sentry/` | Sentry Mode clip storage. |
-| `Music/` | General audio storage. |
-| `LIGHTSHOW/` | Light show package storage. |
+| `Boombox/` | Custom horn and Boombox sounds. |
 
 When the folder check passes, the app enables Step 2: Marketplace.
 
@@ -47,7 +44,7 @@ path shown in Step 2 is read-only and comes from the selected drive in Step 1.
 Use the top tabs to switch between:
 
 - **Music** for Marketplace audio and custom audio installs.
-- **Light Shows** for `.tas` light show packages.
+- **Light Shows** for `.tas` and `.zip` light show packages.
 
 ## Installing Marketplace Audio
 
@@ -57,10 +54,12 @@ choose **Install**, the app asks where the audio should go:
 | Target | Destination |
 | --- | --- |
 | Horn | `Boombox/Horn.wav` |
-| Lock Chime | `LockChime/LockChime.wav` |
+| Lock Chime | `LockChime.wav` |
 
 The app downloads the selected audio, converts it with FFmpeg, normalizes the
 audio level, and writes the converted `.wav` file to the selected USB drive.
+Lock chimes are capped to five seconds and converted to mono WAV to stay under
+Tesla's 1 MB custom lock sound limit.
 
 ## Importing Custom Audio
 
@@ -76,21 +75,28 @@ Drop the file into the upload area, choose **Horn** or **Lock Chime**, then
 confirm the destination. The installed output is converted to Tesla-compatible
 WAV settings.
 
-Custom horn sounds must comply with local traffic laws. Avoid using sounds that
-could be confused with emergency vehicles or other regulated signals.
+Custom horn sounds must comply with local traffic laws. Tesla plays custom horn
+sounds through Boombox while the vehicle is in Park; while driving, the normal
+horn is used.
 
 ## Installing Light Shows
 
-The Light Shows tab handles Tesla `.tas` packages. The app checks that a package
-contains required sequence and audio assets before installation. Valid light
-show packages are copied to:
+The Light Shows tab handles Tesla `.tas` and `.zip` packages. The app checks
+that a package contains a matching `.fseq` file and `.mp3` or `.wav` audio file
+before installation. Valid light show packages are extracted to:
 
 ```text
-LIGHTSHOW/<show-name>.tas
+LightShow/<show-name>.fseq
+LightShow/<show-name>.wav
 ```
 
 If a destination already exists, the install flow requires explicit overwrite
 permission before replacing it.
+
+Tesla's light-show requirements are strict: the app creates the root folder
+`LightShow` with that exact casing during light-show install, the `.fseq` and
+audio file names must match, the USB drive must not contain a root-level
+`TeslaCam` folder, and it must not contain map update or firmware update files.
 
 ## Troubleshooting
 
@@ -116,8 +122,14 @@ sure the sidecar binaries exist in `src-tauri/binaries` before packaging.
 
 ### Light Show Package Fails Inspection
 
-The `.tas` archive must include a sequence file and companion audio. Re-download
-the package or choose another light show if inspection reports missing assets.
+The `.tas` or `.zip` package must include a sequence file and companion audio
+with matching file names. Re-download the package or choose another light show
+if inspection reports missing assets.
+
+### Light Show Install Fails Because TeslaCam Exists
+
+Use a separate light-show USB drive or remove the root-level `TeslaCam` folder.
+Tesla light-show USB drives cannot share a root `TeslaCam` folder.
 
 ### Windows Warns During Install
 
@@ -133,11 +145,11 @@ mount path:
 | Feature | Relative path |
 | --- | --- |
 | Horn audio | `Boombox/Horn.wav` |
-| Lock chime audio | `LockChime/LockChime.wav` |
-| Light show packages | `LIGHTSHOW/<show-name>.tas` |
-| Music folder | `Music/` |
-| Dashcam folder | `TeslaCam/` |
-| Sentry folder | `Sentry/` |
+| Lock chime audio | `LockChime.wav` |
+| Light show sequence | `LightShow/<show-name>.fseq` |
+| Light show audio | `LightShow/<show-name>.wav` or `LightShow/<show-name>.mp3` |
+| Boombox folder | `Boombox/` |
+| Light show folder | `LightShow/` |
 
 Review the mount path before confirming any operation that writes to the USB
 drive.

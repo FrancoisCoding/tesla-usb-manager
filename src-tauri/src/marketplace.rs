@@ -418,22 +418,61 @@ const LIGHTSHOW_BASE: &str = "https://teslalightshare.io";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LightShowEntry { pub id: u64, pub title: String, pub author: String, pub upload_date: String, pub duration: String, pub download_count: u64, pub upvotes: u64, pub downvotes: u64, pub youtube_embed_url: String }
-fn ls_default_page() -> u64 { 1 }
-fn ls_default_sort_type() -> String { "hot".to_string() }
-fn ls_default_sort_order() -> String { "desc".to_string() }
+pub struct LightShowEntry {
+    pub id: u64,
+    pub title: String,
+    pub author: String,
+    pub upload_date: String,
+    pub duration: String,
+    pub download_count: u64,
+    pub upvotes: u64,
+    pub downvotes: u64,
+    pub youtube_embed_url: String,
+}
+fn ls_default_page() -> u64 {
+    1
+}
+fn ls_default_sort_type() -> String {
+    "hot".to_string()
+}
+fn ls_default_sort_order() -> String {
+    "desc".to_string()
+}
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct FetchLightShowsRequest { #[serde(default="ls_default_page")] pub page: u64, pub category: Option<String>, #[serde(default="ls_default_sort_type")] pub sort_type: String, #[serde(default="ls_default_sort_order")] pub sort_order: String, pub search: Option<String> }
+pub struct FetchLightShowsRequest {
+    #[serde(default = "ls_default_page")]
+    pub page: u64,
+    pub category: Option<String>,
+    #[serde(default = "ls_default_sort_type")]
+    pub sort_type: String,
+    #[serde(default = "ls_default_sort_order")]
+    pub sort_order: String,
+    pub search: Option<String>,
+}
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct FetchLightShowsResponse { pub page: u64, pub entries: Vec<LightShowEntry>, pub fetched_at_epoch_ms: u128 }
+pub struct FetchLightShowsResponse {
+    pub page: u64,
+    pub entries: Vec<LightShowEntry>,
+    pub fetched_at_epoch_ms: u128,
+}
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct DownloadInstallLightShowRequest { pub show_id: u64, pub usb_mount_path: String, pub show_name: Option<String>, pub overwrite_existing: bool }
+pub struct DownloadInstallLightShowRequest {
+    pub show_id: u64,
+    pub usb_mount_path: String,
+    pub show_name: Option<String>,
+    pub overwrite_existing: bool,
+}
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct DownloadInstallLightShowResult { pub show_id: u64, pub installed_path: String, pub show_name: String, pub bytes: usize }
+pub struct DownloadInstallLightShowResult {
+    pub show_id: u64,
+    pub installed_path: String,
+    pub show_name: String,
+    pub bytes: usize,
+}
 pub(crate) fn parse_lightshow_entries(html: &str) -> Vec<LightShowEntry> {
     let document = Html::parse_document(html);
     let card_sel = Selector::parse("div.show-card-container").expect("c");
@@ -441,95 +480,316 @@ pub(crate) fn parse_lightshow_entries(html: &str) -> Vec<LightShowEntry> {
     let iframe_sel = Selector::parse("iframe[src]").expect("i");
     let vote_sel = Selector::parse("div.votes p.pe-1").expect("v");
     let dur_sel = Selector::parse("p.duration").expect("d");
-    let dl_col_sel = Selector::parse("div.col-6.d-flex.align-items-center.justify-content-between p").expect("dl");
+    let dl_col_sel =
+        Selector::parse("div.col-6.d-flex.align-items-center.justify-content-between p")
+            .expect("dl");
     let creator_sel = Selector::parse("p.creator").expect("cr");
     let title_sel = Selector::parse("h5.card-title").expect("t");
     let mut entries: Vec<LightShowEntry> = Vec::new();
     for card in document.select(&card_sel) {
-        let id: Option<u64> = card.select(&link_sel).find_map(|a| { let href = a.value().attr("href").unwrap_or_default(); let segs: Vec<&str> = href.trim_end_matches('/').rsplit('/').collect(); segs.first().and_then(|s| s.parse().ok()) });
-        let id = match id { Some(v) => v, None => continue };
-        let youtube_embed_url: String = card.select(&iframe_sel).next().and_then(|f| f.value().attr("src")).unwrap_or_default().to_string();
-        let vote_values: Vec<u64> = card.select(&vote_sel).map(|p| { let tx=collect_text(p); tx.parse().unwrap_or(0u64) }).collect();
+        let id: Option<u64> = card.select(&link_sel).find_map(|a| {
+            let href = a.value().attr("href").unwrap_or_default();
+            let segs: Vec<&str> = href.trim_end_matches('/').rsplit('/').collect();
+            segs.first().and_then(|s| s.parse().ok())
+        });
+        let id = match id {
+            Some(v) => v,
+            None => continue,
+        };
+        let youtube_embed_url: String = card
+            .select(&iframe_sel)
+            .next()
+            .and_then(|f| f.value().attr("src"))
+            .unwrap_or_default()
+            .to_string();
+        let vote_values: Vec<u64> = card
+            .select(&vote_sel)
+            .map(|p| {
+                let tx = collect_text(p);
+                tx.parse().unwrap_or(0u64)
+            })
+            .collect();
         let upvotes = vote_values.get(0).copied().unwrap_or(0);
         let downvotes = vote_values.get(1).copied().unwrap_or(0);
-        let duration: String = card.select(&dur_sel).next().map(collect_text).unwrap_or_default();
+        let duration: String = card
+            .select(&dur_sel)
+            .next()
+            .map(collect_text)
+            .unwrap_or_default();
         let dl_texts: Vec<String> = card.select(&dl_col_sel).map(collect_text).collect();
-        let download_count: u64 = dl_texts.last().and_then(|s| { let d: String = s.chars().filter(|c| c.is_ascii_digit()).collect(); d.parse().ok() }).unwrap_or(0);
-        let creator_text = card.select(&creator_sel).next().map(collect_text).unwrap_or_default();
+        let download_count: u64 = dl_texts
+            .last()
+            .and_then(|s| {
+                let d: String = s.chars().filter(|c| c.is_ascii_digit()).collect();
+                d.parse().ok()
+            })
+            .unwrap_or(0);
+        let creator_text = card
+            .select(&creator_sel)
+            .next()
+            .map(collect_text)
+            .unwrap_or_default();
         let author: String = creator_text.trim().to_string();
         let upload_date: String = String::new();
-        let title: String = card.select(&title_sel).next().map(collect_text).unwrap_or_default();
-        if title.is_empty() { continue; }
-        entries.push(LightShowEntry { id, title, author, upload_date, duration, download_count, upvotes, downvotes, youtube_embed_url });
+        let title: String = card
+            .select(&title_sel)
+            .next()
+            .map(collect_text)
+            .unwrap_or_default();
+        if title.is_empty() {
+            continue;
+        }
+        entries.push(LightShowEntry {
+            id,
+            title,
+            author,
+            upload_date,
+            duration,
+            download_count,
+            upvotes,
+            downvotes,
+            youtube_embed_url,
+        });
     }
     entries
 }
 fn sanitize_lightshow_name(raw: &str) -> String {
     let mut v = String::with_capacity(raw.len());
-    for c in raw.chars() { if c.is_ascii_alphanumeric() { v.push(c); } else { v.push(char::from(95u8)); } }
-    let s = v.find(|c: char| c.is_ascii_alphanumeric()).unwrap_or(v.len());
-    let e = v.rfind(|c: char| c.is_ascii_alphanumeric()).map(|i| i+1).unwrap_or(0);
-    if s >= e { "lightshow".to_string() } else { v[s..e].to_string() }
+    for c in raw.chars() {
+        if c.is_ascii_alphanumeric() {
+            v.push(c);
+        } else {
+            v.push(char::from(95u8));
+        }
+    }
+    let s = v
+        .find(|c: char| c.is_ascii_alphanumeric())
+        .unwrap_or(v.len());
+    let e = v
+        .rfind(|c: char| c.is_ascii_alphanumeric())
+        .map(|i| i + 1)
+        .unwrap_or(0);
+    if s >= e {
+        "lightshow".to_string()
+    } else {
+        v[s..e].to_string()
+    }
+}
+fn lightshow_entry_stem(name: &str) -> Option<String> {
+    Path::new(name)
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .map(|value| value.to_string())
+}
+fn lightshow_entry_extension(name: &str) -> Option<String> {
+    Path::new(name)
+        .extension()
+        .and_then(|value| value.to_str())
+        .map(|value| value.to_ascii_lowercase())
+}
+fn find_lightshow_pair<R: std::io::Read + std::io::Seek>(
+    archive: &mut zip::ZipArchive<R>,
+) -> Result<(String, String, String), String> {
+    let mut sequences = Vec::new();
+    let mut audio_files = Vec::new();
+
+    for index in 0..archive.len() {
+        let entry = archive
+            .by_index(index)
+            .map_err(|e| format!("Read zip entry failed: {e}"))?;
+        if entry.is_dir() {
+            continue;
+        }
+        let name = entry.name().to_string();
+        let stem = match lightshow_entry_stem(&name) {
+            Some(value) if !value.is_empty() => value,
+            _ => continue,
+        };
+        let extension = match lightshow_entry_extension(&name) {
+            Some(value) => value,
+            None => continue,
+        };
+
+        if extension == "fseq" {
+            sequences.push((stem, name));
+        } else if extension == "mp3" || extension == "wav" {
+            audio_files.push((stem, name, extension));
+        }
+    }
+
+    for (sequence_stem, sequence_name) in sequences {
+        if let Some((_, audio_name, audio_extension)) = audio_files
+            .iter()
+            .find(|(audio_stem, _, _)| audio_stem == &sequence_stem)
+        {
+            return Ok((sequence_name, audio_name.clone(), audio_extension.clone()));
+        }
+    }
+
+    Err("Light show zip must contain matching .fseq and .mp3/.wav files.".to_string())
+}
+fn validate_lightshow_usb_root(usb_mount_path: &Path) -> Result<(), String> {
+    if usb_mount_path.join("TeslaCam").exists() {
+        return Err(
+            "Tesla Light Show USB drives must not contain a base-level TeslaCam folder."
+                .to_string(),
+        );
+    }
+
+    for entry in
+        fs::read_dir(usb_mount_path).map_err(|e| format!("Inspect USB root failed: {e}"))?
+    {
+        let entry = entry.map_err(|e| format!("Inspect USB root entry failed: {e}"))?;
+        let file_name = entry.file_name().to_string_lossy().to_ascii_lowercase();
+        let suspicious_update_file = file_name.contains("firmware")
+            || file_name.contains("map")
+            || file_name.contains("update");
+        if entry.path().is_file() && suspicious_update_file {
+            return Err(
+                "Tesla Light Show USB drives must not contain map or firmware update files."
+                    .to_string(),
+            );
+        }
+    }
+
+    Ok(())
 }
 async fn scrape_lightshow_zip_url(show_id: u64) -> Result<String, String> {
     let detail_url = format!("{}/light-show/{}", LIGHTSHOW_BASE, show_id);
-    let response = reqwest::get(&detail_url).await.map_err(|e| format!("Fetch detail failed: {e}"))?;
-    if !response.status().is_success() { return Err(format!("Detail HTTP {}", response.status())); }
-    let html = response.text().await.map_err(|e| format!("Read detail body failed: {e}"))?;
+    let response = reqwest::get(&detail_url)
+        .await
+        .map_err(|e| format!("Fetch detail failed: {e}"))?;
+    if !response.status().is_success() {
+        return Err(format!("Detail HTTP {}", response.status()));
+    }
+    let html = response
+        .text()
+        .await
+        .map_err(|e| format!("Read detail body failed: {e}"))?;
     let document = Html::parse_document(&html);
     let dl_sel = Selector::parse("a.download-zip").expect("dl-zip");
-    let href = document.select(&dl_sel).next().and_then(|a| a.value().attr("href")).ok_or_else(|| "No download link found.".to_string())?;
-    let url = Url::parse(href).or_else(|_| Url::parse(LIGHTSHOW_BASE).and_then(|b| b.join(href))).map_err(|e| format!("Bad URL: {e}"))?;
+    let href = document
+        .select(&dl_sel)
+        .next()
+        .and_then(|a| a.value().attr("href"))
+        .ok_or_else(|| "No download link found.".to_string())?;
+    let url = Url::parse(href)
+        .or_else(|_| Url::parse(LIGHTSHOW_BASE).and_then(|b| b.join(href)))
+        .map_err(|e| format!("Bad URL: {e}"))?;
     Ok(url.to_string())
 }
 #[tauri::command]
-pub async fn fetch_lightshows(request: Option<FetchLightShowsRequest>) -> Result<FetchLightShowsResponse, String> {
-    let req = request.unwrap_or_else(|| FetchLightShowsRequest { page:1, category:None, sort_type:"hot".to_string(), sort_order:"desc".to_string(), search:None });
+pub async fn fetch_lightshows(
+    request: Option<FetchLightShowsRequest>,
+) -> Result<FetchLightShowsResponse, String> {
+    let req = request.unwrap_or_else(|| FetchLightShowsRequest {
+        page: 1,
+        category: None,
+        sort_type: "hot".to_string(),
+        sort_order: "desc".to_string(),
+        search: None,
+    });
     let mut base_url = Url::parse(LIGHTSHOW_BASE).map_err(|e| format!("Bad base: {e}"))?;
     if let Some(ref q) = req.search {
         base_url.set_path("/api/getCardsBySearch");
-        base_url.query_pairs_mut().append_pair("q", q).append_pair("page", &req.page.to_string());
+        base_url
+            .query_pairs_mut()
+            .append_pair("q", q)
+            .append_pair("page", &req.page.to_string());
     } else {
         base_url.set_path("/api/getCards");
-        base_url.query_pairs_mut().append_pair("type", &req.sort_type).append_pair("order", &req.sort_order).append_pair("page", &req.page.to_string());
-        if let Some(ref cat) = req.category { base_url.query_pairs_mut().append_pair("category", cat); }
+        base_url
+            .query_pairs_mut()
+            .append_pair("type", &req.sort_type)
+            .append_pair("order", &req.sort_order)
+            .append_pair("page", &req.page.to_string());
+        if let Some(ref cat) = req.category {
+            base_url.query_pairs_mut().append_pair("category", cat);
+        }
     }
     let url = base_url.to_string();
-    let response = reqwest::get(&url).await.map_err(|e| format!("Fetch lightshows failed: {e}"))?;
-    if !response.status().is_success() { return Err(format!("Lightshow catalog HTTP {}", response.status())); }
-    let html = response.text().await.map_err(|e| format!("Read catalog body failed: {e}"))?;
+    let response = reqwest::get(&url)
+        .await
+        .map_err(|e| format!("Fetch lightshows failed: {e}"))?;
+    if !response.status().is_success() {
+        return Err(format!("Lightshow catalog HTTP {}", response.status()));
+    }
+    let html = response
+        .text()
+        .await
+        .map_err(|e| format!("Read catalog body failed: {e}"))?;
     let entries = parse_lightshow_entries(&html);
-    Ok(FetchLightShowsResponse { page: req.page, entries, fetched_at_epoch_ms: now_epoch_ms()? })
+    Ok(FetchLightShowsResponse {
+        page: req.page,
+        entries,
+        fetched_at_epoch_ms: now_epoch_ms()?,
+    })
 }
 #[tauri::command]
-pub async fn download_install_lightshow(request: DownloadInstallLightShowRequest) -> Result<DownloadInstallLightShowResult, String> {
+pub async fn download_install_lightshow(
+    request: DownloadInstallLightShowRequest,
+) -> Result<DownloadInstallLightShowResult, String> {
     let zip_url = scrape_lightshow_zip_url(request.show_id).await?;
-    let response = reqwest::get(&zip_url).await.map_err(|e| format!("Download zip failed: {e}"))?;
-    if !response.status().is_success() { return Err(format!("Zip download HTTP {}", response.status())); }
-    let zip_bytes = response.bytes().await.map_err(|e| format!("Read zip bytes failed: {e}"))?;
-    if zip_bytes.is_empty() { return Err("Lightshow zip was empty.".to_string()); }
-    let show_name = request.show_name.as_deref().map(sanitize_lightshow_name).filter(|s| !s.is_empty()).unwrap_or_else(|| format!("show_{}", request.show_id));
-    let lightshow_dir = PathBuf::from(&request.usb_mount_path).join("LIGHTSHOW");
-    fs::create_dir_all(&lightshow_dir).map_err(|e| format!("Create LIGHTSHOW dir failed: {e}"))?;
-    let show_dir = lightshow_dir.join(&show_name);
-    if show_dir.exists() && !request.overwrite_existing { return Err(format!("Show already exists: {}", show_name)); }
-    if show_dir.exists() { fs::remove_dir_all(&show_dir).map_err(|e| format!("Remove existing show failed: {e}"))?; }
-    fs::create_dir_all(&show_dir).map_err(|e| format!("Create show dir failed: {e}"))?;
+    let response = reqwest::get(&zip_url)
+        .await
+        .map_err(|e| format!("Download zip failed: {e}"))?;
+    if !response.status().is_success() {
+        return Err(format!("Zip download HTTP {}", response.status()));
+    }
+    let zip_bytes = response
+        .bytes()
+        .await
+        .map_err(|e| format!("Read zip bytes failed: {e}"))?;
+    if zip_bytes.is_empty() {
+        return Err("Lightshow zip was empty.".to_string());
+    }
+    let show_name = request
+        .show_name
+        .as_deref()
+        .map(sanitize_lightshow_name)
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| format!("show_{}", request.show_id));
+    let usb_mount_path = PathBuf::from(&request.usb_mount_path);
+    validate_lightshow_usb_root(&usb_mount_path)?;
+    let lightshow_dir = usb_mount_path.join("LightShow");
+    fs::create_dir_all(&lightshow_dir).map_err(|e| format!("Create LightShow dir failed: {e}"))?;
     let cursor = std::io::Cursor::new(zip_bytes.as_ref());
     let mut archive = zip::ZipArchive::new(cursor).map_err(|e| format!("Open zip failed: {e}"))?;
-    let mut total_bytes: usize = 0;
-    for i in 0..archive.len() {
-        let mut zf = archive.by_index(i).map_err(|e| format!("Read zip entry failed: {e}"))?;
-        if zf.is_dir() { continue; }
-        let name = zf.name().to_string();
-        let file_name = Path::new(&name).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| name.clone());
-        let dest = show_dir.join(&file_name);
-        let mut content = Vec::new();
-        std::io::Read::read_to_end(&mut zf, &mut content).map_err(|e| format!("Read zip content failed: {e}"))?;
-        fs::write(&dest, &content).map_err(|e| format!("Write file failed: {e}"))?;
-        total_bytes += content.len();
+    let (sequence_entry, audio_entry, audio_extension) = find_lightshow_pair(&mut archive)?;
+    let sequence_path = lightshow_dir.join(format!("{show_name}.fseq"));
+    let audio_path = lightshow_dir.join(format!("{show_name}.{audio_extension}"));
+    if (sequence_path.exists() || audio_path.exists()) && !request.overwrite_existing {
+        return Err(format!("Show already exists: {}", show_name));
     }
-    Ok(DownloadInstallLightShowResult { show_id: request.show_id, installed_path: path_to_string(&show_dir), show_name, bytes: total_bytes })
+
+    let mut sequence_file = archive
+        .by_name(&sequence_entry)
+        .map_err(|e| format!("Read .fseq entry failed: {e}"))?;
+    let mut sequence_content = Vec::new();
+    std::io::Read::read_to_end(&mut sequence_file, &mut sequence_content)
+        .map_err(|e| format!("Read .fseq content failed: {e}"))?;
+    drop(sequence_file);
+
+    let mut audio_file = archive
+        .by_name(&audio_entry)
+        .map_err(|e| format!("Read audio entry failed: {e}"))?;
+    let mut audio_content = Vec::new();
+    std::io::Read::read_to_end(&mut audio_file, &mut audio_content)
+        .map_err(|e| format!("Read audio content failed: {e}"))?;
+
+    fs::write(&sequence_path, &sequence_content).map_err(|e| format!("Write .fseq failed: {e}"))?;
+    fs::write(&audio_path, &audio_content).map_err(|e| format!("Write audio failed: {e}"))?;
+    let installed_path = format!(
+        "{} + {}",
+        path_to_string(&sequence_path),
+        path_to_string(&audio_path)
+    );
+    Ok(DownloadInstallLightShowResult {
+        show_id: request.show_id,
+        installed_path,
+        show_name,
+        bytes: sequence_content.len() + audio_content.len(),
+    })
 }
 #[cfg(test)]
 mod tests {
