@@ -423,6 +423,14 @@ body {
 }
 .btn-icon:hover { color: var(--text); background: var(--surface-hover); }
 
+.btn:focus-visible,
+.filter-tab:focus-visible,
+.sidebar-item:focus-visible,
+.drive-item:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 80%, #ffffff 20%);
+  outline-offset: 2px;
+}
+
 /* ── Progress / Storage Bars ─────────────────────────── */
 .progress-track {
   height: 6px;
@@ -493,6 +501,10 @@ body {
   border: 1px solid var(--border);
   background: var(--surface);
   transition: border-color 0.15s;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
 }
 
 .drive-item.selected {
@@ -1317,6 +1329,10 @@ body {
   transition: border-color 0.15s;
 }
 .input-sm:focus { border-color: var(--accent); }
+.input-sm:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 78%, #ffffff 22%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
 
 .mount-path-badge {
   display: inline-flex;

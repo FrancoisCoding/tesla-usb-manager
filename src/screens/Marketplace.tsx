@@ -226,14 +226,18 @@ export default function Marketplace() {
 
   return (
     <div className="content">
-      <div className="filter-tabs">
+      <div className="filter-tabs" role="tablist" aria-label="Marketplace view">
         <button
+          role="tab"
+          aria-selected={viewFilter === "music"}
           className={viewFilter === "music" ? "filter-tab active" : "filter-tab"}
           onClick={() => setViewFilter("music")}
         >
           Music
         </button>
         <button
+          role="tab"
+          aria-selected={viewFilter === "lightshows"}
           className={viewFilter === "lightshows" ? "filter-tab active" : "filter-tab"}
           onClick={() => setViewFilter("lightshows")}
         >
@@ -264,10 +268,12 @@ export default function Marketplace() {
             </div>
           </div>
 
-          <div className="filter-tabs">
+          <div className="filter-tabs" role="tablist" aria-label="Music category filter">
             {categories.map((tab) => (
               <button
                 key={tab}
+                role="tab"
+                aria-selected={activeTab === tab}
                 className={activeTab === tab ? "filter-tab active" : "filter-tab"}
                 onClick={() => {
                   setActiveTab(tab);
@@ -279,10 +285,11 @@ export default function Marketplace() {
             ))}
           </div>
           <div className="flex items-center gap-1" style={{ marginBottom: "1rem" }}>
-            <label className="label-sm" style={{ whiteSpace: "nowrap" }}>
+            <label htmlFor="marketplace-search" className="label-sm" style={{ whiteSpace: "nowrap" }}>
               Search
             </label>
             <input
+              id="marketplace-search"
               className="input-sm"
               style={{ flex: 1 }}
               placeholder="Filter sounds by name or category"
@@ -351,6 +358,8 @@ export default function Marketplace() {
                       </div>
                       {installMsg[key] && (
                         <div
+                          role="status"
+                          aria-live="polite"
                           style={{
                             fontSize: "0.68rem",
                             padding: "0 0.75rem 0.5rem",
@@ -476,6 +485,8 @@ export default function Marketplace() {
             )}
             {uploadMsg && (
               <div
+                role="status"
+                aria-live="polite"
                 style={{
                   marginTop: "0.5rem",
                   fontSize: "0.75rem",

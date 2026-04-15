@@ -158,6 +158,14 @@ export default function Dashboard({ onNavigate, onSetupReadyChange }: Props) {
   return (
     <div className="content" style={{ maxWidth: "760px" }}>
       <div className="card" style={{ marginBottom: "1rem" }}>
+        <div style={{ fontWeight: 700, fontSize: "0.9rem", marginBottom: "0.3rem" }}>
+          Prepare a Tesla-ready USB drive
+        </div>
+        <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+          Select a drive, confirm Tesla folder compatibility, then continue to Marketplace once setup is complete.
+        </div>
+      </div>
+      <div className="card" style={{ marginBottom: "1rem" }}>
         <div className="flex items-center justify-between" style={{ marginBottom: "0.75rem" }}>
           <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>Step 1 of 2: USB Setup</div>
           <button className="btn btn-ghost btn-sm" onClick={refreshDrives} disabled={loadingDrives}>
@@ -173,10 +181,13 @@ export default function Dashboard({ onNavigate, onSetupReadyChange }: Props) {
           ? <div className="text-muted" style={{ fontSize: "0.8rem", padding: "0.5rem 0" }}>No drives detected. Insert a USB drive and press Refresh.</div>
           : <div className="drive-list">
               {drives.map((drive) => (
-                <div
+                <button
+                  type="button"
                   key={drive.id}
                   className={selectedId === drive.id ? "drive-item selected" : "drive-item"}
                   onClick={() => setSelectedId(drive.id)}
+                  aria-pressed={selectedId === drive.id}
+                  aria-label={`Select drive ${drive.displayName}`}
                 >
                   <div className="drive-info">
                     <div className="drive-name">{drive.displayName}</div>
@@ -186,7 +197,7 @@ export default function Dashboard({ onNavigate, onSetupReadyChange }: Props) {
                     </div>
                   </div>
                   <div className={selectedId === drive.id ? "drive-radio selected-radio" : "drive-radio"} />
-                </div>
+                </button>
               ))}
             </div>
         }
@@ -242,7 +253,7 @@ export default function Dashboard({ onNavigate, onSetupReadyChange }: Props) {
           </div>
         )}
         {checkingSetup && (
-          <div style={{ marginBottom: "0.5rem", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+          <div role="status" aria-live="polite" style={{ marginBottom: "0.5rem", fontSize: "0.75rem", color: "var(--text-muted)" }}>
             Checking existing Tesla folder setup...
           </div>
         )}
@@ -262,7 +273,7 @@ export default function Dashboard({ onNavigate, onSetupReadyChange }: Props) {
           </div>
         )}
         {applyMsg && (
-          <div style={{ marginBottom: "0.5rem", fontSize: "0.75rem", color: applyMsg.startsWith("Error") ? "var(--accent)" : "var(--green)" }}>
+          <div role="status" aria-live="polite" style={{ marginBottom: "0.5rem", fontSize: "0.75rem", color: applyMsg.startsWith("Error") ? "var(--accent)" : "var(--green)" }}>
             {applyMsg}
           </div>
         )}
