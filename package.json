@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Tesla USB Manager",
+  "author": "Isaiah Francois (FrancoisCoding)",
   "type": "module",
   "scripts": {
     "dev": "vite",
