@@ -1,0 +1,155 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows installer
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install FFmpeg sidecars
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $binaryDirectory = "src-tauri/binaries"
+          New-Item -ItemType Directory -Force $binaryDirectory | Out-Null
+
+          $archivePath = Join-Path $env:RUNNER_TEMP "ffmpeg.zip"
+          $extractPath = Join-Path $env:RUNNER_TEMP "ffmpeg"
+          Invoke-WebRequest `
+            -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" `
+            -OutFile $archivePath
+          Expand-Archive -Path $archivePath -DestinationPath $extractPath -Force
+
+          $ffmpeg = Get-ChildItem $extractPath -Recurse -Filter "ffmpeg.exe" |
+            Select-Object -First 1
+          $ffprobe = Get-ChildItem $extractPath -Recurse -Filter "ffprobe.exe" |
+            Select-Object -First 1
+
+          if (-not $ffmpeg -or -not $ffprobe) {
+            throw "FFmpeg or FFprobe was not found in the downloaded archive."
+          }
+
+          Copy-Item `
+            -Path $ffmpeg.FullName `
+            -Destination "$binaryDirectory/ffmpeg-x86_64-pc-windows-msvc.exe"
+          Copy-Item `
+            -Path $ffprobe.FullName `
+            -Destination "$binaryDirectory/ffprobe-x86_64-pc-windows-msvc.exe"
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build Windows installer
+        run: npm run tauri build -- --bundles nsis,msi --ci
+
+      - name: Prepare release assets
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $assetDirectory = "release-assets"
+          New-Item -ItemType Directory -Force $assetDirectory | Out-Null
+
+          $bundles = Get-ChildItem "src-tauri/target/release/bundle" `
+            -Recurse `
+            -Include "*.exe", "*.msi"
+
+          if (-not $bundles) {
+            throw "No Windows installer assets were produced."
+          }
+
+          foreach ($bundle in $bundles) {
+            Copy-Item -Path $bundle.FullName -Destination $assetDirectory
+          }
+
+          Get-ChildItem $assetDirectory -File | ForEach-Object {
+            $hash = Get-FileHash $_.FullName -Algorithm SHA256
+            $line = "$($hash.Hash.ToLower())  $($_.Name)"
+            Set-Content -Path "$($_.FullName).sha256" -Value $line
+          }
+
+      - name: Write release page
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $notes = @'
+          # Tesla USB Manager {{VERSION}}
+
+          ## Download
+
+          Use the Windows installer assets below. Most users should download the
+          `.exe` setup file. The `.msi` package is included for managed Windows
+          deployment.
+
+          ## What is included
+
+          - Tesla USB Manager desktop app.
+          - Windows app runtime bundled by Tauri.
+          - FFmpeg and FFprobe sidecars for audio conversion.
+          - SHA-256 checksum files for every installer asset.
+
+          You do not need Node.js, Rust, the Tauri CLI, or separate FFmpeg
+          executables when installing from this release.
+
+          ## Install
+
+          1. Download the `.exe` installer from Assets.
+          2. Run the installer and follow the Windows prompts.
+          3. Launch Tesla USB Manager from the Start menu.
+          4. Insert a USB drive and complete Step 1 before using Marketplace.
+
+          ## Verify
+
+          Download the matching `.sha256` file and compare it with:
+
+          ```powershell
+          Get-FileHash ".\Tesla USB Manager*.exe" -Algorithm SHA256
+          ```
+
+          Windows SmartScreen may warn on unsigned community builds. Confirm
+          that the file came from this repository's release assets before
+          installing.
+          '@
+
+          $notes = $notes -replace "(?m)^          ", ""
+          $notes = $notes -replace "{{VERSION}}", $env:GITHUB_REF_NAME
+          Set-Content -Path "release-assets/release-notes.md" -Value $notes
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-assets/release-notes.md
+          fail_on_unmatched_files: true
+          files: |
+            release-assets/*.exe
+            release-assets/*.msi
+            release-assets/*.sha256
+          name: Tesla USB Manager ${{ github.ref_name }}
+          prerelease: ${{ contains(github.ref_name, '-') }}
