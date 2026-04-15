@@ -1,5 +1,11 @@
 # Tesla USB Manager
 
+Desktop utility for preparing Tesla-compatible USB drives and installing Marketplace media (music and light shows) with guided setup.
+
+## Open Source
+
+This repository is fully open source under the MIT License. See `LICENSE`.
+
 ## Prerequisites
 
 - Node.js 20+
@@ -18,6 +24,19 @@ npm run tauri dev
 ```bash
 npm run build
 ```
+
+## Tests
+
+```bash
+npm test
+```
+
+## UI Notes
+
+- Step 2 (Marketplace) stays disabled until Step 1 validates a Tesla-ready drive.
+- Marketplace view tabs are mutually exclusive: `Music` or `Light Shows`.
+- USB mount path in Step 2 is read-only and sourced from the selected drive in Step 1.
+- Sidebar USB brand icon variants are available in `src/App.tsx` via `SIDEBAR_USB_ICON_VARIANT` (`minimal`, `rounded`, `bold`).
 
 ## Sidecar Setup
 
