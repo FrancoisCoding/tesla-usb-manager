@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { fetchLightShows, downloadInstallLightShow, youtubeThumbnail, youtubeVideoId } from "../lightshow/teslalightshare";
 import type { LightShowEntry, FetchLightShowsRequest } from "../lightshow/teslalightshare";
 import { installLightShow } from "../lightshow/tauri";
+import { readSelectedUsbMountPath } from "../usb/selection";
 
 const CATS = [
   { label: "All", value: "all" },
@@ -18,7 +19,11 @@ const SORTS = [
   { label: "Top Voted", type: "votes", order: "desc" },
 ];
 
-export default function Lighthouse() {
+interface LighthouseProps {
+  embedded?: boolean;
+}
+
+export default function Lighthouse({ embedded = false }: LighthouseProps) {
   const [entries, setEntries] = useState([] as LightShowEntry[]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null as string | null);
@@ -28,7 +33,7 @@ export default function Lighthouse() {
   const [sortIdx, setSortIdx] = useState(0);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null as LightShowEntry | null);
-  const [usbPath, setUsbPath] = useState("");
+  const usbPath = readSelectedUsbMountPath();
   const [installing, setInstalling] = useState(false);
   const [installMsg, setInstallMsg] = useState(null as string | null);
   const [tasPath, setTasPath] = useState("");
@@ -77,7 +82,15 @@ export default function Lighthouse() {
     }
   }
   return (
-    <div className="content" style={{ display: "flex", gap: "1rem", overflow: "hidden", height: "100%" }}>
+    <div
+      className={embedded ? undefined : "content"}
+      style={{
+        display: "flex",
+        gap: "1rem",
+        overflow: embedded ? "visible" : "hidden",
+        height: embedded ? "auto" : "100%",
+      }}
+    >
       <div style={{ flex: 1, overflow: "auto" }}>
         <div className="flex items-center gap-2" style={{ marginBottom: "0.75rem" }}>
           <input
@@ -146,8 +159,12 @@ export default function Lighthouse() {
             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.75rem" }}>By {selected.author}</div>
             <div style={{ marginBottom: "0.5rem" }}>
               <label style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "block", marginBottom: "0.25rem" }}>USB Drive Path</label>
-              <input value={usbPath} onChange={(e) => setUsbPath(e.target.value)} placeholder="e.g. D:/"
-                style={{ width: "100%", boxSizing: "border-box", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: "6px", padding: "0.4rem 0.5rem", fontSize: "0.78rem" }} />
+              <div className="mount-path-badge" style={{ opacity: usbPath.trim() ? 1 : 0.75 }}>
+                <span className="mount-path-badge-dot" aria-hidden="true" />
+                <span className="mount-path-badge-label">
+                  {usbPath.trim() ? usbPath : "No drive selected. Complete Step 1 first."}
+                </span>
+              </div>
             </div>
             <button className="btn btn-primary btn-sm" style={{ width: "100%" }}
               disabled={!usbPath.trim() || installing} onClick={handleInstall}>
@@ -169,12 +186,12 @@ export default function Lighthouse() {
             onChange={(e) => setTasPath(e.target.value)}
           />
           <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: "0.25rem" }}>USB Drive Path</div>
-          <input
-            style={{ width: "100%", boxSizing: "border-box", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: "6px", padding: "0.4rem 0.5rem", fontSize: "0.75rem", marginBottom: "0.4rem" }}
-            placeholder="e.g. D:/"
-            value={usbPath}
-            onChange={(e) => setUsbPath(e.target.value)}
-          />
+          <div className="mount-path-badge" style={{ marginBottom: "0.4rem", opacity: usbPath.trim() ? 1 : 0.75 }}>
+            <span className="mount-path-badge-dot" aria-hidden="true" />
+            <span className="mount-path-badge-label">
+              {usbPath.trim() ? usbPath : "No drive selected. Complete Step 1 first."}
+            </span>
+          </div>
           <button className="btn btn-primary btn-sm" style={{ width: "100%", marginBottom: "0.4rem" }}
             disabled={!tasPath.trim() || !usbPath.trim() || tasInstalling} onClick={handleInstallCustomTas}>
             {tasInstalling ? "Installing..." : "Install Custom Show"}

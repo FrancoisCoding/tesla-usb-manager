@@ -279,7 +279,10 @@ pub fn build_tesla_format_plan(request: TeslaFormatPlanRequest) -> Result<TeslaF
         volume_label: DEFAULT_VOLUME_LABEL.to_string(),
         filesystem,
         fingerprint,
-        folders_to_create: folder_layout(),
+        folders_to_create: folder_layout()
+            .into_iter()
+            .filter(|folder| !mount_path.join(folder).exists())
+            .collect(),
         warnings,
     })
 }
@@ -321,6 +324,7 @@ pub fn prepare_tesla_usb_layout(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
     fn chooses_fat32_for_32_gib_or_smaller() {
@@ -363,5 +367,31 @@ mod tests {
         let c = drive_fingerprint("F:\\", Some(128));
         assert_eq!(a, b);
         assert_ne!(a, c);
+    }
+
+    #[test]
+    fn format_plan_lists_only_missing_folders() {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let base = std::env::temp_dir().join(format!("tesla_usb_plan_{suffix}"));
+
+        fs::create_dir_all(base.join("Music")).unwrap();
+        fs::create_dir_all(base.join("Sentry")).unwrap();
+
+        let request = TeslaFormatPlanRequest {
+            mount_path: base.to_string_lossy().to_string(),
+            total_bytes: Some(128 * 1024 * 1024 * 1024),
+            expected_fingerprint: None,
+        };
+
+        let plan = build_tesla_format_plan(request).unwrap();
+        assert_eq!(
+            plan.folders_to_create,
+            vec!["TeslaCam".to_string(), "LIGHTSHOW".to_string()]
+        );
+
+        fs::remove_dir_all(base).unwrap();
     }
 }
