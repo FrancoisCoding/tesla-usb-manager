@@ -49,7 +49,10 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           $assetDirectory = "release-assets"
+          $portableDirectory = Join-Path $env:RUNNER_TEMP "tesla-usb-manager-portable"
+          $portableAppDirectory = Join-Path $portableDirectory "Tesla USB Manager"
           New-Item -ItemType Directory -Force $assetDirectory | Out-Null
+          New-Item -ItemType Directory -Force $portableAppDirectory | Out-Null
 
           $bundles = Get-ChildItem "src-tauri/target/release/bundle" `
             -Recurse `
@@ -62,6 +65,47 @@ jobs:
           foreach ($bundle in $bundles) {
             Copy-Item -Path $bundle.FullName -Destination $assetDirectory
           }
+
+          $portableFiles = @(
+            "src-tauri/target/release/tesla-usb-manager.exe",
+            "src-tauri/target/release/ffmpeg.exe",
+            "src-tauri/target/release/ffprobe.exe"
+          )
+
+          foreach ($portableFile in $portableFiles) {
+            if (-not (Test-Path $portableFile)) {
+              throw "Portable release file was not produced: $portableFile"
+            }
+            Copy-Item -Path $portableFile -Destination $portableAppDirectory
+          }
+
+          $portableReadme = @'
+          Tesla USB Manager Portable
+
+          Files included:
+          - tesla-usb-manager.exe
+          - ffmpeg.exe
+          - ffprobe.exe
+
+          Requirements:
+          - Microsoft Edge WebView2 Runtime must already be installed on Windows.
+
+          Usage:
+          1. Extract this ZIP to a normal folder.
+          2. Keep all included files in the same folder.
+          3. Run tesla-usb-manager.exe.
+          '@
+          Set-Content -Path (Join-Path $portableAppDirectory "README.txt") -Value $portableReadme
+
+          $portableZipName = "Tesla-USB-Manager-${env:GITHUB_REF_NAME}-windows-portable.zip"
+          $portableZipPath = Join-Path $assetDirectory $portableZipName
+          if (Test-Path $portableZipPath) {
+            Remove-Item $portableZipPath -Force
+          }
+          Compress-Archive `
+            -Path (Join-Path $portableDirectory "*") `
+            -DestinationPath $portableZipPath `
+            -CompressionLevel Optimal
 
           Get-ChildItem $assetDirectory -File | ForEach-Object {
             $hash = Get-FileHash $_.FullName -Algorithm SHA256
@@ -78,19 +122,20 @@ jobs:
 
           ## Download
 
-          Use the Windows installer assets below. Most users should download the
-          `.exe` setup file. The `.msi` package is included for managed Windows
-          deployment.
+          Most users should download the `.exe` setup file. The `.msi` package is
+          included for managed Windows deployment, and the portable `.zip` is
+          included for users who prefer to extract and run the app manually.
 
           ## What is included
 
           - Tesla USB Manager desktop app.
           - Windows app runtime bundled by Tauri.
           - FFmpeg and FFprobe sidecars for audio conversion.
+          - Portable ZIP with the app executable and sidecars.
           - SHA-256 checksum files for every installer asset.
 
           You do not need Node.js, Rust, the Tauri CLI, or separate FFmpeg
-          executables when installing from this release.
+          executables when using the installer or portable ZIP from this release.
 
           ## Install
 
@@ -99,12 +144,24 @@ jobs:
           3. Launch Tesla USB Manager from the Start menu.
           4. Insert a USB drive and complete Step 1 before using Marketplace.
 
+          ## Portable ZIP
+
+          1. Download the `windows-portable.zip` asset from Assets.
+          2. Extract it to a normal folder.
+          3. Keep `tesla-usb-manager.exe`, `ffmpeg.exe`, and `ffprobe.exe` in the
+             same folder.
+          4. Run `tesla-usb-manager.exe`.
+
+          The portable ZIP does not install WebView2 for you. If the app does not
+          launch, install the Microsoft Edge WebView2 Runtime and try again.
+
           ## Verify
 
-          Download the matching `.sha256` file and compare it with:
+          Download the matching `.sha256` file and compare it with one of:
 
           ```powershell
           Get-FileHash ".\Tesla USB Manager*.exe" -Algorithm SHA256
+          Get-FileHash ".\Tesla-USB-Manager-*-windows-portable.zip" -Algorithm SHA256
           ```
 
           Windows SmartScreen may warn on unsigned community builds. Confirm
@@ -124,6 +181,7 @@ jobs:
           files: |
             release-assets/*.exe
             release-assets/*.msi
+            release-assets/*.zip
             release-assets/*.sha256
           name: Tesla USB Manager ${{ github.ref_name }}
           prerelease: ${{ contains(github.ref_name, '-') }}
