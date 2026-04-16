@@ -36,6 +36,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install FFmpeg sidecars
+        shell: pwsh
+        run: ./.github/scripts/install-ffmpeg-sidecars.ps1
+
       - name: Build frontend
         run: npm run build
 

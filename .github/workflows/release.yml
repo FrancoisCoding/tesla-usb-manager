@@ -36,33 +36,7 @@ jobs:
 
       - name: Install FFmpeg sidecars
         shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $binaryDirectory = "src-tauri/binaries"
-          New-Item -ItemType Directory -Force $binaryDirectory | Out-Null
-
-          $archivePath = Join-Path $env:RUNNER_TEMP "ffmpeg.zip"
-          $extractPath = Join-Path $env:RUNNER_TEMP "ffmpeg"
-          Invoke-WebRequest `
-            -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" `
-            -OutFile $archivePath
-          Expand-Archive -Path $archivePath -DestinationPath $extractPath -Force
-
-          $ffmpeg = Get-ChildItem $extractPath -Recurse -Filter "ffmpeg.exe" |
-            Select-Object -First 1
-          $ffprobe = Get-ChildItem $extractPath -Recurse -Filter "ffprobe.exe" |
-            Select-Object -First 1
-
-          if (-not $ffmpeg -or -not $ffprobe) {
-            throw "FFmpeg or FFprobe was not found in the downloaded archive."
-          }
-
-          Copy-Item `
-            -Path $ffmpeg.FullName `
-            -Destination "$binaryDirectory/ffmpeg-x86_64-pc-windows-msvc.exe"
-          Copy-Item `
-            -Path $ffprobe.FullName `
-            -Destination "$binaryDirectory/ffprobe-x86_64-pc-windows-msvc.exe"
+        run: ./.github/scripts/install-ffmpeg-sidecars.ps1
 
       - name: Run tests
         run: npm test
