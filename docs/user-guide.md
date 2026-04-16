@@ -9,12 +9,16 @@ You need:
 
 - A Windows PC with Tesla USB Manager installed from GitHub Releases.
 - A USB drive that you intend to use with your Tesla.
-- Enough free space for Boombox audio and light show files.
+- Enough free space for Boombox media, lock chime audio, and light show files.
 - Network access when loading Marketplace content.
 
 Back up important files before preparing a drive. The app focuses on Tesla
 folder setup and media installation, but you should still confirm the selected
 drive before writing changes.
+
+If you are using the portable ZIP release instead of the installer, extract the
+archive first and keep `tesla-usb-manager.exe`, `ffmpeg.exe`, and `ffprobe.exe`
+in the same folder before launching the app.
 
 ## Step 1: USB Setup
 
@@ -27,12 +31,15 @@ Step 1 detects removable USB drives and shows key information:
 - Tesla folder setup status.
 
 Select the drive you want to use. If the app reports that required Tesla
-folders are missing, choose **Configure Drive** and confirm the safety
-prompt. The app creates the Boombox folder used for custom horn sounds:
+folders are missing, choose **Configure Drive** and confirm the safety prompt.
+The app creates the Boombox setup folder:
 
 | Folder | Purpose |
 | --- | --- |
-| `Boombox/` | Custom horn and Boombox sounds. |
+| `Boombox/` | Tesla Boombox media setup. |
+
+Lock chimes do not require their own setup folder because Tesla reads the
+custom sound from `LockChime.wav` at the USB root.
 
 When the folder check passes, the app enables Step 2: Marketplace.
 
@@ -49,17 +56,18 @@ Use the top tabs to switch between:
 ## Installing Marketplace Audio
 
 The Music tab lets you browse, search, preview, and install audio. When you
-choose **Install**, the app asks where the audio should go:
+choose **Install**, the app lets you choose one of two Tesla audio targets:
 
 | Target | Destination |
 | --- | --- |
-| Horn | `Boombox/Horn.wav` |
 | Lock Chime | `LockChime.wav` |
+| Boombox | `Boombox/<sound-name>.wav` |
 
 The app downloads the selected audio, converts it with FFmpeg, normalizes the
 audio level, and writes the converted `.wav` file to the selected USB drive.
 Lock chimes are capped to five seconds and converted to mono WAV to stay under
-Tesla's 1 MB custom lock sound limit.
+Tesla's 1 MB custom lock sound limit. Boombox installs keep the full audio
+length and write a stereo WAV file with a safe file name.
 
 ## Importing Custom Audio
 
@@ -71,13 +79,9 @@ source formats are:
 - OGG
 - FLAC
 
-Drop the file into the upload area, choose **Horn** or **Lock Chime**, then
-confirm the destination. The installed output is converted to Tesla-compatible
-WAV settings.
-
-Custom horn sounds must comply with local traffic laws. Tesla plays custom horn
-sounds through Boombox while the vehicle is in Park; while driving, the normal
-horn is used.
+Drop the file into the upload area, choose **Lock Chime** or **Boombox**, then
+confirm the destination. The installed output is converted to
+Tesla-compatible WAV settings for the selected target.
 
 ## Installing Light Shows
 
@@ -137,6 +141,17 @@ Unsigned community builds can trigger Windows SmartScreen. Verify that the
 installer was downloaded from this repository's GitHub Releases page and compare
 the SHA-256 checksum before continuing.
 
+### Portable ZIP Does Not Launch
+
+Confirm that the extracted folder still contains:
+
+- `tesla-usb-manager.exe`
+- `ffmpeg.exe`
+- `ffprobe.exe`
+
+Also confirm that Microsoft Edge WebView2 Runtime is installed on the machine.
+The portable ZIP does not install WebView2 automatically.
+
 ## File Destinations
 
 Tesla USB Manager writes media to these paths relative to the selected USB
@@ -144,8 +159,8 @@ mount path:
 
 | Feature | Relative path |
 | --- | --- |
-| Horn audio | `Boombox/Horn.wav` |
 | Lock chime audio | `LockChime.wav` |
+| Boombox audio | `Boombox/<sound-name>.wav` |
 | Light show sequence | `LightShow/<show-name>.fseq` |
 | Light show audio | `LightShow/<show-name>.wav` or `LightShow/<show-name>.mp3` |
 | Boombox folder | `Boombox/` |

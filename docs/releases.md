@@ -23,6 +23,7 @@ You do not need:
 | --- | --- | --- |
 | `.exe` installer | You are installing on your own Windows PC | Recommended for most users. |
 | `.msi` package | You need managed Windows deployment | Useful for IT-managed installs. |
+| `windows-portable.zip` | You want a portable folder instead of an installer | Keep the app and sidecars together after extraction. |
 | `.sha256` file | You want to verify a download | Match it to the installer file name. |
 
 Download from the **Assets** section of the latest GitHub Release. The release
@@ -32,21 +33,26 @@ components, and checksum verification.
 ## Install Steps
 
 1. Open the latest release on GitHub.
-2. Download the Windows `.exe` installer from **Assets**.
-3. Run the installer and follow the Windows prompts.
-4. Launch Tesla USB Manager from the Start menu.
-5. Insert a USB drive and complete Step 1 before using Marketplace.
+2. Download either the Windows `.exe` installer or the portable ZIP from **Assets**.
+3. If you chose the installer, run it and follow the Windows prompts.
+4. If you chose the portable ZIP, extract it and keep the included files together.
+5. Launch Tesla USB Manager.
+6. Insert a USB drive and complete Step 1 before using Marketplace.
 
 Windows SmartScreen may warn on unsigned community builds. Confirm that the
 installer came from this repository's release assets before continuing.
 
+Portable ZIP builds also require Microsoft Edge WebView2 Runtime to already be
+installed on Windows.
+
 ## Verify a Download
 
-Each release publishes a `.sha256` file next to every installer. On Windows,
-compare the downloaded installer hash with PowerShell:
+Each release publishes a `.sha256` file next to every installer and ZIP asset.
+On Windows, compare the downloaded file hash with PowerShell:
 
 ```powershell
 Get-FileHash ".\Tesla USB Manager*.exe" -Algorithm SHA256
+Get-FileHash ".\Tesla-USB-Manager-*-windows-portable.zip" -Algorithm SHA256
 ```
 
 The hash value should match the first value inside the matching `.sha256` file.
@@ -60,6 +66,8 @@ Release builds package:
 - Tauri Windows runtime bundle.
 - `ffmpeg-x86_64-pc-windows-msvc.exe`.
 - `ffprobe-x86_64-pc-windows-msvc.exe`.
+- Portable ZIP containing `tesla-usb-manager.exe`, `ffmpeg.exe`, `ffprobe.exe`,
+  and a small README.
 
 The FFmpeg sidecars are required for audio conversion and Marketplace install
 flows. They are downloaded during the GitHub Release workflow and copied into
@@ -92,6 +100,7 @@ git push origin v0.1.0
 5. Open the generated GitHub Release and confirm that Assets contains:
    - A Windows `.exe` installer.
    - A Windows `.msi` package.
+   - A Windows portable `.zip`.
    - Matching `.sha256` files.
 
 ## Release Workflow
@@ -106,16 +115,18 @@ The workflow in `.github/workflows/release.yml` performs these steps:
 6. Runs `npm test`.
 7. Builds NSIS and MSI installers with `npm run tauri build`.
 8. Copies installer assets into `release-assets/`.
-9. Generates SHA-256 checksum files.
-10. Publishes a GitHub Release with a clean install-focused body.
+9. Builds a portable ZIP from the release executable and sidecars.
+10. Generates SHA-256 checksum files.
+11. Publishes a GitHub Release with a clean install-focused body.
 
 ## Clean Release Page Standard
 
-Every release page should answer four questions quickly:
+Every release page should answer five questions quickly:
 
-- **What do I download?** Use the `.exe` installer unless you need MSI.
+- **What do I download?** Use the `.exe` installer unless you specifically want the portable ZIP or need MSI.
 - **What is included?** App, runtime bundle, FFmpeg, and FFprobe.
 - **What do I need locally?** Nothing beyond Windows and a USB drive.
+- **What if I want portable?** Extract the ZIP and keep the sidecars next to the app executable.
 - **How do I verify it?** Compare the installer hash with the `.sha256` file.
 
 Avoid putting maintainer-only implementation detail at the top of the GitHub

@@ -3,21 +3,38 @@
 Tesla USB Manager is a desktop utility for preparing Tesla-compatible USB
 drives and installing Marketplace media. It guides users through drive setup
 first, then unlocks audio and light show installation once the selected drive
-has the expected Tesla folders.
+is ready.
+
+## Showcase
+
+Tesla USB Manager gives Tesla owners a guided desktop workflow for:
+
+- Preparing a Tesla-ready USB drive.
+- Installing Marketplace music as lock chimes or Boombox sounds.
+- Importing custom audio and converting it to Tesla-compatible WAV output.
+- Extracting supported light show packages onto the selected drive.
+
+Add a screenshot asset to the repository and embed it here before the public
+announcement. Recommended path: `docs/images/tesla-usb-manager-app.png`.
 
 ## Download
 
 Most users do not need Node.js, Rust, the Tauri CLI, or separate executable
 dependencies. Download the latest Windows installer from the repository's
-GitHub Releases page, run the `.exe`, and launch Tesla USB Manager from the
-Start menu.
+GitHub Releases page, choose either the installer or the portable ZIP, and
+launch Tesla USB Manager on Windows.
 
 Release assets include:
 
 - A Windows `.exe` installer for normal desktop installs.
 - A Windows `.msi` package for managed deployment.
+- A Windows portable `.zip` that contains the app and required sidecars.
 - SHA-256 checksum files for verifying downloads.
 - Bundled FFmpeg and FFprobe sidecars for Marketplace audio conversion.
+
+Portable ZIP users must keep `tesla-usb-manager.exe`, `ffmpeg.exe`, and
+`ffprobe.exe` in the same folder. Windows machines also need Microsoft Edge
+WebView2 Runtime installed.
 
 For the full download, verification, and publishing process, see
 [`docs/releases.md`](docs/releases.md).
@@ -25,11 +42,13 @@ For the full download, verification, and publishing process, see
 ## What It Does
 
 - Detects removable USB drives and shows capacity, filesystem, and mount path.
-- Creates the Tesla `Boombox` folder used for custom horn sounds.
+- Creates the Tesla `Boombox` folder used by the Boombox setup flow.
 - Keeps Marketplace disabled until Step 1 confirms the selected USB drive is
   ready.
-- Installs Marketplace audio as either a horn sound or a lock chime.
-- Imports custom audio files and converts them with FFmpeg for Tesla use.
+- Installs Marketplace audio as either a Tesla custom lock chime at
+  `LockChime.wav` or a Boombox sound under `Boombox/`.
+- Imports custom audio files and converts them with FFmpeg for Tesla lock
+  chime or Boombox use.
 - Creates `LightShow` during light-show install and extracts `.tas` or `.zip`
   light show packages into Tesla's required
   `LightShow` folder as matching `.fseq` plus `.mp3` or `.wav` files.
@@ -51,9 +70,10 @@ destination paths, and troubleshooting steps.
 
 Tesla USB Manager writes folders and media files to the selected USB drive.
 Always confirm the mount path before applying setup or installing media. Custom
-horn sounds must comply with local traffic laws and should be used responsibly.
-Tesla light-show drives must not contain a root-level `TeslaCam` folder, map
-update files, or firmware update files.
+lock chimes are written as `LockChime.wav` at the USB root, and Boombox audio
+is written as named `.wav` files under `Boombox/`. Tesla light-show drives must
+not contain a root-level `TeslaCam` folder, map update files, or firmware
+update files.
 
 ## Open Source
 
@@ -121,7 +141,8 @@ To publish a downloadable release:
    GitHub Release assets.
 
 The release workflow downloads Windows FFmpeg sidecars, builds NSIS and MSI
-installers, generates checksums, and creates a clean GitHub Release body.
+installers, packages a portable ZIP, generates checksums, and creates a clean
+GitHub Release body.
 
 ## Sidecar Setup
 
