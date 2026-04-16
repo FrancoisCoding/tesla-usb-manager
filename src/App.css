@@ -146,6 +146,14 @@ body {
   gap: 1px;
 }
 
+.sidebar-support {
+  color: color-mix(in srgb, #ffdd80 70%, var(--text) 30%);
+}
+
+.sidebar-support:hover {
+  color: #ffdd80;
+}
+
 .sidebar-version {
   padding: 0.6rem 1rem 0.75rem;
   font-size: 0.58rem;
