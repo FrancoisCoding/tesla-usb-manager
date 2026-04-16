@@ -192,6 +192,7 @@ fn assert_expected_fingerprint(
     Ok(fingerprint)
 }
 
+#[cfg(target_os = "windows")]
 fn detect_windows_mounts() -> Vec<PathBuf> {
     (b'D'..=b'Z')
         .map(|letter| PathBuf::from(format!("{}:\\", letter as char)))
